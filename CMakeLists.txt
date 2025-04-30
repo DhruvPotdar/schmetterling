@@ -12,7 +12,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include_directories(include)
 # Add the executable target
 add_executable(schmetterling
-src/board/bitboard.cpp
+src/board/board.cpp
     # Add your other source files here, e.g.
     # src/board.cpp
     # src/engine.cpp

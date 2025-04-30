@@ -27,7 +27,7 @@ cd "$BUILD_DIR"
 echo "[INFO] Running CMake..."
 cmake ..
 echo "[INFO] Compiling with make..."
-make -j"$(nproc)"
+cmake --build . -j"$(nproc)"
 
 # Indicator before execution
 echo "==================================="
@@ -35,6 +35,4 @@ echo " Build successful! Running RayTracer..."
 echo "==================================="
 
 # Run the program
-./raytracer >"$1".png
-
-feh ./"$1".png
+./schmetterling

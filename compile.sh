@@ -27,4 +27,4 @@ cd "$BUILD_DIR"
 echo "[INFO] Running CMake..."
 cmake ..
 echo "[INFO] Compiling with make..."
-make -j"$(nproc)"
+cmake --build . -j"$(nproc)"
