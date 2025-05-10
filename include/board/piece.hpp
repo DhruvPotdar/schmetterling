@@ -1,7 +1,16 @@
-// Contains definitions for each piece type (represented as integers), as well
-// as various helper functions for dealing with pieces.static class
+/**
+ * @file
+ * @brief Contains definitions for each piece type (represented as integers), as well as various
+ * helper functions for dealing with pieces.static class
+ */
+
+#ifndef PIECE_HPP
+
+#define PIECE_HPP
+
 #include <string>
 #include <vector>
+
 typedef int piece_t;
 class Piece {
   public:
@@ -152,3 +161,4 @@ class Piece {
         }
     }
 };
+#endif // !PIECE_HPP

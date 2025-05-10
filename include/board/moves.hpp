@@ -36,23 +36,23 @@ class Move {
         moveValue = static_cast<move_t>(startSquare | targetSquare << 6);
     }
     // Constructor to create a move with a flag
-    Move(int startSquare, int targetSquare, int flag) {
+    Move(int startSquare, int targetSquare, MoveFlag flag) {
         moveValue =
             // Perform the move and place the flag in as well
-            static_cast<move_t>(startSquare | targetSquare << 6 | flag << 12);
+            static_cast<move_t>(startSquare | targetSquare << 6 | static_cast<int>(flag) << 12);
     }
 
     // Getter for the raw 16-bit value
     move_t Value() const { return moveValue; }
 
     // Checks if the move is considered "null" (value is 0)
-    bool IsNull() const { return moveValue == 0; }
+    constexpr bool IsNull() const { return moveValue == 0; }
 
     // Extracts the starting square index
     int StartSquare() const { return moveValue & startSquareMask; }
 
     // Extracts the target square index
-    int TargetSquare() const { return (moveValue & targetSquareMask) >> 6; }
+    int targetSquare() const { return (moveValue & targetSquareMask) >> 6; }
 
     // Checks if the move is a promotion
     bool IsPromotion() const { return GetMoveFlag() >= MoveFlag::PromoteToQueenFlag; }

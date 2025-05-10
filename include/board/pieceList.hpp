@@ -1,9 +1,9 @@
+#ifndef PIECELIST_HPP
 
 #pragma once
 #include <array>
 
-class PieceList
-{
+class PieceList {
   private:
     // Indices of squares occupied by given piece type
     std::array<int, 16> occupiedSquares;
@@ -12,31 +12,27 @@ class PieceList
     int numPieces;
 
   public:
-    PieceList(int maxPieceCount = 16) : numPieces(0)
-    {
+    PieceList(int maxPieceCount = 16) : numPieces(0) {
         occupiedSquares.fill(0);
         map.fill(0);
     }
 
     int Count() const { return numPieces; }
 
-    void AddPieceAtSquare(int square)
-    {
+    void addPieceAtSquare(int square) {
         occupiedSquares[numPieces] = square;
         map[square] = numPieces;
         numPieces++;
     }
 
-    void RemovePieceAtSquare(int square)
-    {
+    void removePieceAtSquare(int square) {
         int pieceIndex = map[square];
         occupiedSquares[pieceIndex] = occupiedSquares[numPieces - 1];
         map[occupiedSquares[pieceIndex]] = pieceIndex;
         numPieces--;
     }
 
-    void MovePiece(int startSquare, int targetSquare)
-    {
+    void MovePiece(int startSquare, int targetSquare) {
 
         int pieceIndex = map[startSquare];
         occupiedSquares[pieceIndex] = targetSquare;
@@ -45,3 +41,5 @@ class PieceList
 
     int operator[](int index) const { return occupiedSquares[index]; }
 };
+
+#endif // !PIECELIST_HPP
