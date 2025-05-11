@@ -1,20 +1,19 @@
 #include "board/board.hpp"
 
+#include "bitboard/bitBoardUtil.hpp"
 #include "board/piece.hpp"
 #include "helpers/fen.hpp"
 #include "state.hpp"
 
+#include <bitset>
 #include <iostream>
 #include <memory>
-#include <vector>
 
-/**
- * @brief make a move
- *
- * @param move
- */
+std::array<board, 64> BitBoardUtil::knightAttacks;
+std::array<board, 64> BitBoardUtil::whitePawnAttacks;
+std::array<board, 64> BitBoardUtil::blackPawnAttacks;
 
-std::string Board::getCurrentFen() { return Fen::currentFen(*this); }
+std::string Board::getCurrentFen() { return Fen::currentFen(*this, true); }
 
 void Board::makeMove(Move move, bool inSearch = false) {
 
@@ -52,6 +51,8 @@ void Board::makeMove(Move move, bool inSearch = false) {
 
         // Remove Captured piece from bitboard and piece piecelist
         allPieceLists[capturedPiece].removePieceAtSquare(captureSquare);
+        BitBoardUtil::toggleSquare(piecesBitBoards[capturedPiece], captureSquare);
+        BitBoardUtil::toggleSquare(colorBitboards[capturedPiece], captureSquare);
     }
 
     // Handle Kings
@@ -67,12 +68,11 @@ void Board::makeMove(Move move, bool inSearch = false) {
             const auto castlingRookFromIndex = (kingSide) ? targetSquare + 1 : targetSquare - 2;
             const auto castlingRookToIndex = (kingSide) ? targetSquare - 1 : targetSquare + 1;
 
-            // TODO: Update Rook position
-            //        BitBoardUtility.ToggleSquares(ref PieceBitboards[rookPiece],
-            //        castlingRookFromIndex, castlingRookToIndex);
-            // BitBoardUtility.ToggleSquares(ref ColourBitboards[MoveColourIndex],
-            // castlingRookFromIndex, castlingRookToIndex);
-            allPieceLists[rook].MovePiece(castlingRookFromIndex, castlingRookToIndex);
+            BitBoardUtil::toggleSquares(piecesBitBoards[rook], castlingRookFromIndex,
+                                        castlingRookToIndex);
+            BitBoardUtil::toggleSquares(colorBitboards[getMoveColorIndex()], castlingRookFromIndex,
+                                        castlingRookToIndex);
+            allPieceLists[rook].movePiece(castlingRookFromIndex, castlingRookToIndex);
             square[castlingRookFromIndex] = Piece::None;
             square[castlingRookToIndex] = Piece::Rook | getMoveColor();
         }
@@ -82,7 +82,7 @@ void Board::makeMove(Move move, bool inSearch = false) {
     if (isPromotion) {
         totalPieceCountWithoutPawnsAndKings++;
 
-        const int promotionPieceType = [promotionPieceType, &moveFlag] {
+        const int promotionPieceClass = [promotionPieceClass, &moveFlag] {
             switch (moveFlag) {
             case MoveFlag::PromoteToQueenFlag:
                 return Piece::Queen;
@@ -96,12 +96,11 @@ void Board::makeMove(Move move, bool inSearch = false) {
                 return Piece::None;
             }
         }();
-        piece_t promotionPiece = Piece::makePiece(promotionPieceType, getMoveColor());
+        piece_t promotionPiece = Piece::makePiece(promotionPieceClass, getMoveColor());
 
-        // TODO: Remove pawn from promotion square
-        // BitBoardUtility.ToggleSquare(ref PieceBitboards[movedPiece], targetSquare);
-        // 				BitBoardUtility.ToggleSquare(ref PieceBitboards[promotionPiece],
-        // targetSquare);
+        // Remove pawn from promotion square and add promoted piece instead
+        BitBoardUtil::toggleSquare(piecesBitBoards[movedPiece], targetSquare);
+        BitBoardUtil::toggleSquare(piecesBitBoards[promotionPiece], targetSquare);
 
         allPieceLists[movedPiece].removePieceAtSquare(targetSquare);
         allPieceLists[promotionPiece].addPieceAtSquare(targetSquare);
@@ -190,14 +189,15 @@ void Board::unmakeMove(Move move, bool inSearch = false) {
 
     // remove piece from promotion square and replace the square with a pawn
     if (undoingPromotion) {
+
         const auto promotedPiece = square[movedTo];
         const auto pawnPiece = Piece::makePiece(Piece::Pawn, getMoveColor());
         totalPieceCountWithoutPawnsAndKings--;
 
         allPieceLists[promotedPiece].removePieceAtSquare(movedTo);
         allPieceLists[movedPiece].addPieceAtSquare(movedTo);
-        // BitBoardUtility.ToggleSquare(ref PieceBitboards[promotedPiece], movedTo);
-        // BitBoardUtility.ToggleSquare(ref PieceBitboards[pawnPiece], movedTo);
+        BitBoardUtil::toggleSquare(piecesBitBoards[promotedPiece], movedTo);
+        BitBoardUtil::toggleSquare(piecesBitBoards[pawnPiece], movedTo);
     }
 
     movePiece(movedPiece, movedTo, movedFrom);
@@ -214,27 +214,35 @@ void Board::unmakeMove(Move move, bool inSearch = false) {
         }
 
         // Add back captured piece
-        // BitBoardUtility.ToggleSquare(ref PieceBitboards[capturedPiece], captureSquare);
-        // BitBoardUtility.ToggleSquare(ref ColourBitboards[OpponentColourIndex], captureSquare);
+        BitBoardUtil::toggleSquare(piecesBitBoards[capturedPiece], captureSquare);
+        BitBoardUtil::toggleSquare(colorBitboards[getOpponentMoveColorIndex()], captureSquare);
         allPieceLists[capturedPiece].addPieceAtSquare(captureSquare);
         square[captureSquare] = capturedPiece;
     }
 
     if (movedPieceClass == Piece::King) {
+
         kingSquare[getMoveColorIndex()] = movedFrom;
 
         // undo castling
         if (movedFlag == MoveFlag::CastleFlag) {
+
             const auto rookPiece = Piece::makePiece(Piece::Rook, getMoveColor());
             const auto kingSide = movedTo == Board::g1 || movedTo == Board::g8;
+
             const auto rookSquareBeforeCastling = kingSide ? movedTo + 1 : movedTo - 2;
             const auto rookSquareAfterCastling = kingSide ? movedTo - 1 : movedTo + 1;
-            // BitBoardUtility.ToggleSquares(ref PieceBitboards[rookPiece], rookSquareAfterCastling,
-            // rookSquareBeforeCastling); BitBoardUtility.ToggleSquares(ref
-            // ColourBitboards[MoveColourIndex], rookSquareAfterCastling, rookSquareBeforeCastling);
+
+            // Undo castling by returing rook to orignal square
+            BitBoardUtil::toggleSquares(piecesBitBoards[rookPiece], rookSquareAfterCastling,
+                                        rookSquareBeforeCastling);
+            BitBoardUtil::toggleSquares(colorBitboards[getMoveColorIndex()],
+                                        rookSquareAfterCastling, rookSquareBeforeCastling);
+
             square[rookSquareAfterCastling] = Piece::None;
             square[rookSquareBeforeCastling] = rookPiece;
-            allPieceLists[rookPiece].MovePiece(rookSquareAfterCastling, rookSquareBeforeCastling);
+
+            allPieceLists[rookPiece].movePiece(rookSquareAfterCastling, rookSquareBeforeCastling);
         }
     }
 
@@ -269,8 +277,12 @@ void Board::makeNullMove() {
     cachedInCheckValue = false;
 }
 
-// Is current player in check?
-// Note: caches check value so calling multiple times does not require recalculating
+/**
+ * @brief Is current player in check?
+ * Note: caches check value so calling multiple times does not require recalculating
+ * @return
+ **/
+
 bool Board::isInCheck() {
     if (hasCachedInCheckValue) {
         return cachedInCheckValue;
@@ -280,6 +292,7 @@ bool Board::isInCheck() {
 
     return cachedInCheckValue;
 }
+
 bool Board::calculateInCheckState() {
     const auto _kingSquare = kingSquare[getMoveColorIndex()];
     const auto blockers = allPiecesBitboard;
@@ -303,11 +316,15 @@ bool Board::calculateInCheckState() {
             != 0)
             return true;
     }
+    const auto enemyKnights = piecesBitBoards[Piece::makePiece(Piece::Knight, getOpponentColor())];
+    if ((BitBoardUtil::knightAttacks[_kingSquare] & enemyKnights) != 0) return true;
     const auto enemyPawns = piecesBitBoards[Piece::makePiece(Piece::Pawn, getOpponentColor())];
-    // const auto pawnAttackMask = isWhiteToMove ? isWhiteToMove ?
-    // BitBoardUtility.WhitePawnAttacks[kingSquare] : BitBoardUtility.BlackPawnAttacks[kingSquare];
-    // if ((pawnAttackMask & enemyPawns) != 0) {
-    //     return true;
+    const auto pawnAttackMask = isWhiteToMove ? BitBoardUtil::whitePawnAttacks[_kingSquare]
+                                              : BitBoardUtil::blackPawnAttacks[_kingSquare];
+    if ((pawnAttackMask & enemyPawns) != 0) {
+        return true;
+    }
+
     return false;
 }
 
@@ -326,8 +343,8 @@ void Board::updateSliderBitboards() {
 }
 
 /**
- * @brief Update piece lists / bitboards based on given move info. Note that this does not account
-for the following things, which must be handled separately:
+ * @brief Update piece lists / bitboards based on given move info. Note that this does not
+account for the following things, which must be handled separately:
 1. Removal of a captured piece
 2. Movement of rook when castling
 3. Removal of pawn from 1st/8th rank during pawn promotion
@@ -338,11 +355,10 @@ for the following things, which must be handled separately:
  * @param targetSquare
  */
 void Board::movePiece(piece_t movedPiece, int startSquare, int targetSquare) {
-    // BitBoardUtility.ToggleSquares(ref PieceBitboards[piece], startSquare, targetSquare);
-    // BitBoardUtility.ToggleSquares(ref ColourBitboards[MoveColourIndex], startSquare,
-    // targetSquare);
+    BitBoardUtil::toggleSquares(piecesBitBoards[movedPiece], startSquare, targetSquare);
+    BitBoardUtil::toggleSquares(colorBitboards[getMoveColorIndex()], startSquare, targetSquare);
 
-    allPieceLists[movedPiece].MovePiece(startSquare, targetSquare);
+    allPieceLists[movedPiece].movePiece(startSquare, targetSquare);
     square[startSquare] = Piece::None;
     square[targetSquare] = movedPiece;
 }
@@ -425,7 +441,7 @@ std::string Board::createDiagram(const Board& board, bool blackAtTop = true,
             result << (blackAtTop ? fileNames : fileNamesRev) << "\n\n";
 
             if (includeFen) {
-                result << "Fen         : " << Fen::currentFen(board) << "\n";
+                result << "Fen         : " << Fen::currentFen(board, true) << "\n";
             }
         }
     }
@@ -439,6 +455,7 @@ void Board::loadPosition(Fen::PositionInfo* posInfo) {
 
     // Load pieces into board array and piece lists
     for (auto squareIndex = 0; squareIndex < 64; squareIndex++) {
+
         auto piece = posInfo->getSquares()[squareIndex];
         auto pieceClass = Piece::pieceClass(piece);
         auto colorIndex = Piece::isWhite(piece) ? whiteIndex : blackIndex;
@@ -446,8 +463,9 @@ void Board::loadPosition(Fen::PositionInfo* posInfo) {
 
         if (pieceClass != Piece::None) {
 
-            // BitBoardUtility.SetSquare(ref PieceBitboards[piece], squareIndex);
-            // BitBoardUtility.SetSquare(ref ColourBitboards[colourIndex], squareIndex);
+            BitBoardUtil::setSquare(piecesBitBoards[piece], squareIndex);
+            BitBoardUtil::setSquare(colorBitboards[colorIndex], squareIndex);
+
             if (pieceClass == Piece::King) {
                 kingSquare[colorIndex] = squareIndex;
             } else {
@@ -502,5 +520,120 @@ Board Board::createBoard(Board source) {
     }
     return board;
 }
+// Helper function to print move details
+void printMoveDetails(const Move& move) {
+    std::cout << "Move: " << Board::squareNameFromIndex(move.StartSquare()) << " to "
+              << Board::squareNameFromIndex(move.targetSquare()) << " (Raw: 0x" << std::hex
+              << move.Value() << std::dec << ")"
+              << "\n  Start Square: " << move.StartSquare()
+              << "\n  Target Square: " << move.targetSquare() << "\n  Flag: ";
+    switch (move.GetMoveFlag()) {
+    case MoveFlag::NoFlag:
+        std::cout << "NoFlag";
+        break;
+    case MoveFlag::EnPassantCaptureFlag:
+        std::cout << "EnPassantCapture";
+        break;
+    case MoveFlag::CastleFlag:
+        std::cout << "Castle";
+        break;
+    case MoveFlag::PawnTwoUpFlag:
+        std::cout << "PawnTwoUp";
+        break;
+    case MoveFlag::PromoteToQueenFlag:
+        std::cout << "PromoteToQueen";
+        break;
+    case MoveFlag::PromoteToKnightFlag:
+        std::cout << "PromoteToKnight";
+        break;
+    case MoveFlag::PromoteToRookFlag:
+        std::cout << "PromoteToRook";
+        break;
+    case MoveFlag::PromoteToBishopFlag:
+        std::cout << "PromoteToBishop";
+        break;
+    default:
+        std::cout << "Unknown";
+        break;
+    }
+    std::cout << " (" << std::bitset<4>(static_cast<int>(move.GetMoveFlag())) << ")"
+              << "\n  Is Promotion? " << (move.IsPromotion() ? "Yes" : "No") << "\n\n";
+}
 
-int main() { std::cout << "Hello"; }
+int main() {
+    // Create a board with the starting position
+    Board board = Board::createBoard(Fen::startPositionFen);
+
+    std::cout << "Initial Board:\n" << static_cast<std::string>(board) << std::endl;
+
+    // Make a few moves and print the board after each move
+    Move e2e4(Board::squareIndexFromName("e2"), Board::squareIndexFromName("e4"));
+    board.makeMove(e2e4, false);
+    std::cout << "After e2-e4:\n" << static_cast<std::string>(board) << std::endl;
+
+    Move g8f6(Board::squareIndexFromName("g8"), Board::squareIndexFromName("f6"));
+    board.makeMove(g8f6, false);
+    std::cout << "After ... Nf6:\n" << static_cast<std::string>(board) << std::endl;
+
+    Move d2d4(Board::squareIndexFromName("d2"), Board::squareIndexFromName("d4"));
+    board.makeMove(d2d4, false);
+    std::cout << "After d2-d4:\n" << static_cast<std::string>(board) << std::endl;
+
+    // Unmake the last move and print the board
+    board.unmakeMove(d2d4, false);
+    std::cout << "After undoing d2-d4:\n" << static_cast<std::string>(board) << std::endl;
+
+    // Test loading a specific FEN string
+    Board customBoard =
+        Board::createBoard("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq c6 0 2");
+    std::cout << "Custom Board (rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq c6 0 2):\n"
+              << static_cast<std::string>(customBoard) << std::endl;
+
+    // Test castling
+    Board castlingBoard = Board::createBoard("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+    std::cout << "Before White Kingside Castling:\n"
+              << static_cast<std::string>(castlingBoard) << std::endl;
+    Move whiteKingsideCastle(Board::squareIndexFromName("e1"), Board::squareIndexFromName("g1"),
+                             MoveFlag::CastleFlag);
+    castlingBoard.makeMove(whiteKingsideCastle, false);
+    std::cout << "After White Kingside Castling:\n"
+              << static_cast<std::string>(castlingBoard) << std::endl;
+    castlingBoard.unmakeMove(whiteKingsideCastle, false);
+    std::cout << "After undoing White Kingside Castling:\n"
+              << static_cast<std::string>(castlingBoard) << std::endl;
+
+    // Test pawn promotion
+    Board promotionBoard = Board::createBoard("8/P7/8/8/8/8/8/8 w - - 0 1");
+    std::cout << "Before White Pawn Promotion:\n"
+              << static_cast<std::string>(promotionBoard) << std::endl;
+    Move whitePromoteQueen(Board::squareIndexFromName("a7"), Board::squareIndexFromName("a8"),
+                           MoveFlag::PromoteToQueenFlag);
+    promotionBoard.makeMove(whitePromoteQueen, false);
+    std::cout << "After White Pawn Promotion to Queen:\n"
+              << static_cast<std::string>(promotionBoard) << std::endl;
+    promotionBoard.unmakeMove(whitePromoteQueen, false);
+    std::cout << "After undoing White Pawn Promotion:\n"
+              << static_cast<std::string>(promotionBoard) << std::endl;
+
+    // Test en passant
+    Board enPassantBoard = Board::createBoard("8/8/8/p7/P7/8/8/8 w - a6 0 1");
+    std::cout << "Before En Passant Capture:\n"
+              << static_cast<std::string>(enPassantBoard) << std::endl;
+    Move whiteEnPassant(Board::squareIndexFromName("a5"), Board::squareIndexFromName("b6"),
+                        MoveFlag::EnPassantCaptureFlag);
+    enPassantBoard.makeMove(whiteEnPassant, false);
+    std::cout << "After En Passant Capture:\n"
+              << static_cast<std::string>(enPassantBoard) << std::endl;
+    enPassantBoard.unmakeMove(whiteEnPassant, false);
+    std::cout << "After undoing En Passant Capture:\n"
+              << static_cast<std::string>(enPassantBoard) << std::endl;
+
+    // Test isInCheck function
+    Board checkBoard1 = Board::createBoard("4k3/8/8/8/4r3/8/8/4K3 w - - 0 1");
+    std::cout << "Board in check (White)? " << checkBoard1.isInCheck() << std::endl;
+
+    Board checkBoard2 = Board::createBoard("4k3/8/8/8/4r3/8/8/4K3 b - - 0 1");
+    std::cout << "Board in check (Black)? " << checkBoard2.isInCheck() << std::endl;
+
+    return 0;
+}

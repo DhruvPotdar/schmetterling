@@ -95,16 +95,16 @@ bool Fen::enPassantCanBeCaptured(int enPassantFileIndex, int enPassantRankIndex,
     Coord captureFromB(enPassantFileIndex + 1, enPassantRankIndex + (board.isWhiteToMove ? -1 : 1));
 
     auto enPassantCaptureSquare =
-        (new Coord(enPassantFileIndex, enPassantRankIndex))->SquareIndex();
+        (new Coord(enPassantFileIndex, enPassantRankIndex))->squareIndex();
     int friendlyPawn = Piece::makePiece(Piece::Pawn, board.getMoveColor());
 
     auto canCapture = [&](const Coord& from) -> bool {
-        if (!from.IsValidSquare()) {
+        if (!from.isValidSquare()) {
             return false;
         }
 
-        if (board.square[from.SquareIndex()] == friendlyPawn) {
-            Move move(from.SquareIndex(), enPassantCaptureSquare, MoveFlag::EnPassantCaptureFlag);
+        if (board.square[from.squareIndex()] == friendlyPawn) {
+            Move move(from.squareIndex(), enPassantCaptureSquare, MoveFlag::EnPassantCaptureFlag);
             board.makeMove(move, false);
             board.makeNullMove();
             const auto wasLegalMove = !board.calculateInCheckState();

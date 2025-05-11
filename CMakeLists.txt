@@ -13,6 +13,7 @@ include_directories(include)
 # Add the executable target
 add_executable(schmetterling
 src/board/board.cpp
+src/helpers/fen.cpp
     # Add your other source files here, e.g.
     # src/board.cpp
     # src/engine.cpp

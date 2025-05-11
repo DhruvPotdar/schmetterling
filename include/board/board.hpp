@@ -4,6 +4,7 @@
  * as: positions of all pieces, side to move, castling rights, en-passant square, etc. Some extra
  * information is included as well to help with evaluation and move generation.
  */
+
 #pragma once
 
 #include "board/coord.hpp"
@@ -107,13 +108,17 @@ class Board {
     static Board createBoard(std::string fen);
     static Board createBoard(Board source);
 
-    operator std::string() const { return Board::createDiagram(*this, !isWhiteToMove, true); }
+    operator std::string() const {
+        // return Board::createDiagram(*this, !isWhiteToMove, true);
+
+        return Board::createDiagram(*this, true, true);
+    }
 
     static const std::array<Coord, 4> rookDirections;
     static const std::array<Coord, 4> bishopDirections;
 
-    static const std::string fileNames;
-    static const std::string rankNames;
+    constexpr static const std::string fileNames = "abcdefgh";
+    constexpr static const std::string rankNames = "12345678";
 
     static const int a1 = 0;
     static const int b1 = 1;
@@ -141,9 +146,7 @@ class Board {
 
     static int indexFromCoord(int fileIndex, int rankIndex) { return rankIndex * 8 + fileIndex; }
 
-    static int indexFromCoord(const Coord& coord) {
-        return indexFromCoord(coord.fileIndex, coord.rankIndex);
-    }
+    static int indexFromCoord(const Coord& coord) { return indexFromCoord(coord.x, coord.y); }
 
     static Coord coordFromIndex(int squareIndex) {
         return Coord(fileIndex(squareIndex), rankIndex(squareIndex));
@@ -166,7 +169,7 @@ class Board {
     }
 
     static std::string squareNameFromCoordinate(const Coord& coord) {
-        return squareNameFromCoordinate(coord.fileIndex, coord.rankIndex);
+        return squareNameFromCoordinate(coord.x, coord.y);
     }
 
     static int squareIndexFromName(const std::string& name) {

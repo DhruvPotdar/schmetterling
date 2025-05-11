@@ -32,7 +32,7 @@ class PieceList {
         numPieces--;
     }
 
-    void MovePiece(int startSquare, int targetSquare) {
+    void movePiece(int startSquare, int targetSquare) {
 
         int pieceIndex = map[startSquare];
         occupiedSquares[pieceIndex] = targetSquare;

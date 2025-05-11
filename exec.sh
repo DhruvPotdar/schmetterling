@@ -31,7 +31,7 @@ cmake --build . -j"$(nproc)"
 
 # Indicator before execution
 echo "==================================="
-echo " Build successful! Running RayTracer..."
+echo " Build successful! Running schmetterling..."
 echo "==================================="
 
 # Run the program

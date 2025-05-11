@@ -36,7 +36,7 @@ class Fen {
         int moveCount;
 
         PositionInfo(std::string fen) {
-            std::vector<int> square(64, Piece::None);
+            std::vector<int> squares(64, Piece::None);
             const auto sections = split(fen);
 
             auto file = 0;
@@ -76,10 +76,12 @@ class Fen {
                         break;
                     }
 
-                    square[rank * 8 + file] = pieceClass | pieceColor;
+                    squares[rank * 8 + file] = pieceClass | pieceColor;
                     file++;
                 }
             }
+            internalSquares = squares;
+
             std::string castlingRights = sections[2];
             whiteCastleKingside = castlingRights.find('K') != std::string::npos;
             whiteCastleQueenside = castlingRights.find('Q') != std::string::npos;

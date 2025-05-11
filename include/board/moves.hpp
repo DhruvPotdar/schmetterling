@@ -31,10 +31,12 @@ class Move {
   public:
     // Constructor to initialize a Move with a 16-bit value
     Move(move_t moveVal) { moveValue = moveVal; }
+
     // Constructor to create a quiet move (no flag)
     Move(int startSquare, int targetSquare) {
         moveValue = static_cast<move_t>(startSquare | targetSquare << 6);
     }
+
     // Constructor to create a move with a flag
     Move(int startSquare, int targetSquare, MoveFlag flag) {
         moveValue =
