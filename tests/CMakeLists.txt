@@ -11,13 +11,6 @@ add_executable(schmetterling_tests
     # state/test_state.cpp
 )
 
-# Link with GoogleTest and schmetterling library
-target_link_libraries(schmetterling_tests
-    PRIVATE
-        gtest
-        gtest_main
-        schmetterling
-)
 
 # Include directories
 target_include_directories(schmetterling_tests
@@ -26,5 +19,14 @@ target_include_directories(schmetterling_tests
 )
 
 # Discover tests for CTest
+include(GoogleTest)
+
+# Link with GoogleTest and schmetterling library
+target_link_libraries(
+  schmetterling_tests
+  GTest::gtest_main
+  schmetterling
+)
+
 include(GoogleTest)
 gtest_discover_tests(schmetterling_tests)
