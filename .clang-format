@@ -2,7 +2,7 @@ BasedOnStyle: LLVM
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
-ColumnLimit: 100
+ColumnLimit: 105
 AllowShortIfStatementsOnASingleLine: true
 SpaceAfterCStyleCast: true
 PointerAlignment: Left

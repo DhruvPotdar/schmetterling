@@ -1,16 +1,17 @@
 #include "helpers/fen.hpp"
 #include "board/board.hpp"
+#include <string>
 
-std::string Fen::currentFen(const Board board, bool alwaysIncludeEnPassantSquare) {
+std::string Fen::currentFen(const Board& board, bool alwaysIncludeEnPassantSquare) {
     std::string fen = "";
-    for (auto rank = 7; rank > 0; rank--) {
+    for (auto rank = 7; rank >= 0; rank--) {
         auto numEmptyFiles = 0;
         for (auto file = 0; file < 8; file++) {
             auto index = rank * 8 + file;
             auto piece = board.square[index];
             if (piece != Piece::None) {
                 if (numEmptyFiles != 0) {
-                    fen += numEmptyFiles;
+                    fen += std::to_string(numEmptyFiles);
                     numEmptyFiles = 0;
                 }
                 const auto isBlack = Piece::isColor(piece, Piece::Black);
@@ -42,7 +43,7 @@ std::string Fen::currentFen(const Board board, bool alwaysIncludeEnPassantSquare
             }
         }
         if (numEmptyFiles != 0) {
-            fen += numEmptyFiles;
+            fen += std::to_string(numEmptyFiles);
         }
         if (rank != 0) {
             fen += '/';
@@ -70,9 +71,8 @@ std::string Fen::currentFen(const Board board, bool alwaysIncludeEnPassantSquare
     const auto enPassantFileIndex = board.currentGameState.enPassantFile - 1;
     const auto enPassantRankIndex = (board.isWhiteToMove) ? 5 : 2;
     const auto isEnPassant = enPassantFileIndex != -1;
-    const auto includeEnPassant =
-        alwaysIncludeEnPassantSquare ||
-        enPassantCanBeCaptured(enPassantFileIndex, enPassantRankIndex, board);
+    const auto includeEnPassant = alwaysIncludeEnPassantSquare ||
+                                  enPassantCanBeCaptured(enPassantFileIndex, enPassantRankIndex, board);
     if (isEnPassant && includeEnPassant) {
         fen += Board::squareNameFromCoordinate(enPassantFileIndex, enPassantRankIndex);
     } else {
@@ -94,8 +94,8 @@ bool Fen::enPassantCanBeCaptured(int enPassantFileIndex, int enPassantRankIndex,
     Coord captureFromA(enPassantFileIndex - 1, enPassantRankIndex + (board.isWhiteToMove ? -1 : 1));
     Coord captureFromB(enPassantFileIndex + 1, enPassantRankIndex + (board.isWhiteToMove ? -1 : 1));
 
-    auto enPassantCaptureSquare =
-        (new Coord(enPassantFileIndex, enPassantRankIndex))->squareIndex();
+    // FIXME heap allocate?
+    auto enPassantCaptureSquare = (new Coord(enPassantFileIndex, enPassantRankIndex))->squareIndex();
     int friendlyPawn = Piece::makePiece(Piece::Pawn, board.getMoveColor());
 
     auto canCapture = [&](const Coord& from) -> bool {
@@ -118,7 +118,7 @@ bool Fen::enPassantCanBeCaptured(int enPassantFileIndex, int enPassantRankIndex,
 }
 std::string Fen::flipFen(std::string fen) {
     std::string flippedFen = "";
-    std::vector<std::string> sections;
+    const auto sections = Fen::split(fen);
     std::vector<char> invertedFenChars;
     const auto fenRanks = Fen::split(sections[0], '/');
 
@@ -139,6 +139,7 @@ std::string Fen::flipFen(std::string fen) {
             flippedFen += "/";
         }
     }
+    flippedFen += " ";
     flippedFen += (sections[1][0] == 'w' ? "b" : "w");
     const std::string castlingRights = sections[2];
     std::string flippedRights = "";
@@ -153,8 +154,10 @@ std::string Fen::flipFen(std::string fen) {
     const std::string enPassant = sections[3];
     std::string flippedEnPassant(1, enPassant[0]);
 
-    if (enPassant.length() > 1) {
+    if (enPassant.length() > 1 && (enPassant[1] == '3' || enPassant[1] == '6')) {
         flippedEnPassant += (enPassant[1] == '6') ? '3' : '6';
+    } else {
+        flippedEnPassant = "-";
     }
 
     flippedFen += " " + flippedEnPassant;

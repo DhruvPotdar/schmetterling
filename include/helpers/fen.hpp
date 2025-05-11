@@ -123,7 +123,7 @@ class Fen {
         return loadedPositionInfo;
     }
 
-    static std::string currentFen(const Board board, bool alwaysIncludeEnPassantSquare = true);
+    static std::string currentFen(const Board& board, bool alwaysIncludeEnPassantSquare = true);
 
     /**
      * @brief checks if we can perform an enPassant capture in the current position of the board

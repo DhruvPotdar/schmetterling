@@ -61,9 +61,7 @@ class Piece {
 
     // Returns true if given piece matches the given colour. If piece is of type
     // 'none', result will always be false.
-    static bool isColor(piece_t piece, int color) {
-        return (piece & colorMask) == color && piece != 0;
-    }
+    static bool isColor(piece_t piece, int color) { return (piece & colorMask) == color && piece != 0; }
 
     static bool isWhite(piece_t piece) { return isColor(piece, White); }
 
@@ -88,7 +86,7 @@ class Piece {
         return (piece_class == Bishop) || (piece_class == Queen) || (piece_class == Queen);
     }
     static char getPieceCharacter(piece_t piece) {
-        int piece_class = pieceClass(piece);
+        const auto piece_class = pieceClass(piece);
         char pieceCharacter;
         switch (piece_class) {
         case Rook:
@@ -111,28 +109,44 @@ class Piece {
     }
 
     static std::string getPieceSymbol(piece_t piece) {
-        int piece_class = pieceClass(piece);
-        bool is_white = isWhite(piece);
+        const auto piece_class = pieceClass(piece);
         std::string pieceSymbol;
+
+        // !is_white ? "♖" :
+        //
+        //
+        // !is_white ? "♘" :
+        //
+        //
+        // !is_white ? "♗" :
+        //
+        //
+        // !is_white ? "♕" :
+        //
+        //
+        // !is_white ? "♔" :
+        //
+        //
+        // !is_white ? "♙" :
 
         switch (piece_class) {
         case Rook:
-            pieceSymbol = !is_white ? "♖" : "♜";
+            pieceSymbol = "♜";
             break;
         case Knight:
-            pieceSymbol = !is_white ? "♘" : "♞";
+            pieceSymbol = "♞";
             break;
         case Bishop:
-            pieceSymbol = !is_white ? "♗" : "♝";
+            pieceSymbol = "♝";
             break;
         case Queen:
-            pieceSymbol = !is_white ? "♕" : "♛";
+            pieceSymbol = "♛";
             break;
         case King:
-            pieceSymbol = !is_white ? "♔" : "♚";
+            pieceSymbol = "♚";
             break;
         case Pawn:
-            pieceSymbol = !is_white ? "♙" : "♟";
+            pieceSymbol = "♟";
             break;
         default:
             pieceSymbol = ' ';

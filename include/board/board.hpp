@@ -75,7 +75,7 @@ class Board {
 
     // # Side to move info
     bool isWhiteToMove;
-    std::stack<uint64_t> repititionPositionHistory;
+    // std::stack<uint64_t> repititionPositionHistory;
 
     void initialize();
     int getFiftyMoveCounter() { return currentGameState.fiftyMoveCounter; }
@@ -152,9 +152,7 @@ class Board {
         return Coord(fileIndex(squareIndex), rankIndex(squareIndex));
     }
 
-    static bool lightSquare(int fileIndex, int rankIndex) {
-        return (fileIndex + rankIndex) % 2 != 0;
-    }
+    static bool lightSquare(int fileIndex, int rankIndex) { return (fileIndex + rankIndex) % 2 != 0; }
 
     static bool LightSquare(int squareIndex) {
         return lightSquare(fileIndex(squareIndex), rankIndex(squareIndex));
@@ -180,6 +178,13 @@ class Board {
         return indexFromCoord(fileIndex, rankIndex);
     }
 
+    // ANSI color codes for the diagram
+    static constexpr std::string RESET = "\033[0m";
+    static constexpr std::string BLACK_BG = "\033[40m";
+    static constexpr std::string WHITE_BG = "\033[47m";
+    static constexpr std::string BLACK_FG = "\033[30m";
+    static constexpr std::string WHITE_FG = "\033[37m";
+    static constexpr std::string HIGHLIGHT_BG = "\033[43m"; // Yellow background for highlighting
     static std::string createDiagram(const Board& board, bool blackAtTop, bool includeFen);
 
     static bool isValidCoordinate(int x, int y) { return x >= 0 && x < 8 && y >= 0 && y < 8; }

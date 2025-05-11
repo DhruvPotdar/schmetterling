@@ -139,14 +139,13 @@ void Board::makeMove(Move move, bool inSearch = false) {
     if (movedPiece == Piece::Pawn || capturedPieceClass != Piece::None) {
         if (!inSearch) {
             // Clear the stack by popping all elements
-            while (!repititionPositionHistory.empty()) {
-                repititionPositionHistory.pop();
-            }
+            // while (!repititionPositionHistory.empty()) {
+            //     repititionPositionHistory.pop();
+            // }
         }
         newFiftyMoveCounter = 0;
     }
-    GameState newState(capturedPieceClass, newEnPassantFile, newCastlingRights,
-                       newFiftyMoveCounter);
+    GameState newState(capturedPieceClass, newEnPassantFile, newCastlingRights, newFiftyMoveCounter);
     gameStateHistory.push_back(newState);
 
     currentGameState = newState;
@@ -236,8 +235,8 @@ void Board::unmakeMove(Move move, bool inSearch = false) {
             // Undo castling by returing rook to orignal square
             BitBoardUtil::toggleSquares(piecesBitBoards[rookPiece], rookSquareAfterCastling,
                                         rookSquareBeforeCastling);
-            BitBoardUtil::toggleSquares(colorBitboards[getMoveColorIndex()],
-                                        rookSquareAfterCastling, rookSquareBeforeCastling);
+            BitBoardUtil::toggleSquares(colorBitboards[getMoveColorIndex()], rookSquareAfterCastling,
+                                        rookSquareBeforeCastling);
 
             square[rookSquareAfterCastling] = Piece::None;
             square[rookSquareBeforeCastling] = rookPiece;
@@ -249,9 +248,9 @@ void Board::unmakeMove(Move move, bool inSearch = false) {
     allPiecesBitboard = colorBitboards[whiteIndex] | colorBitboards[blackIndex];
     updateSliderBitboards();
 
-    if (!inSearch && repititionPositionHistory.empty()) {
-        repititionPositionHistory.pop();
-    }
+    // if (!inSearch && repititionPositionHistory.empty()) {
+    //     repititionPositionHistory.pop();
+    // }
     if (!inSearch) {
         allGameMoves.pop_back();
     }
@@ -368,7 +367,7 @@ void Board::initialize() {
     kingSquare = {0, 0};  // Or set to invalid square as sentinel
     square.assign(64, 0); // Clear the square array
 
-    repititionPositionHistory = std::stack<uint64_t>();
+    // repititionPositionHistory = std::stack<uint64_t>();
     gameStateHistory = std::vector<GameState>();
 
     std::unique_ptr<GameState> currentGameState = std::make_unique<GameState>();
@@ -404,48 +403,74 @@ void Board::initialize() {
     hasCachedInCheckValue = false;
     cachedInCheckValue = false;
 }
-std::string Board::createDiagram(const Board& board, bool blackAtTop = true,
-                                 bool includeFen = true) {
-    // Thanks to ernestoyaquello
+
+std::string Board::createDiagram(const Board& board, bool blackAtTop = true, bool includeFen = true) {
     std::ostringstream result;
-    int lastMoveSquare =
-        board.allGameMoves.size() > 0 ? board.allGameMoves.back().targetSquare() : -1;
+
+    // ANSI color codes
+    const std::string RESET = "\033[0m";
+    const std::string BLACK_SQUARE_BG = "\033[48;5;94m";  // Dark brown background
+    const std::string WHITE_SQUARE_BG = "\033[48;5;222m"; // Light brown background
+    const std::string BLACK_PIECE_FG = "\033[38;5;0m";    // Pure black text
+    const std::string WHITE_PIECE_FG = "\033[38;5;231m";  // Brightest white text
+    const std::string HIGHLIGHT_BG = "\033[48;5;65m";     // Muted green highlight for last move
+
+    // Get the last move's target square for highlighting
+    int lastMoveSquare = board.allGameMoves.size() > 0 ? board.allGameMoves.back().targetSquare() : -1;
+
+    // Board frame top
+    result << "  ┌────────────────────────┐\n";
 
     for (int y = 0; y < 8; y++) {
-        int rankIndex = blackAtTop ? 7 - y : y;
-        result << "+---+---+---+---+---+---+---+---+\n";
+        int rankIndex = blackAtTop ? y : 7 - y;
+        result << (rankIndex + 1) << " │"; // Rank number on the left
 
         for (int x = 0; x < 8; x++) {
-            int fileIndex = blackAtTop ? x : 7 - x;
-            int squareIndex = indexFromCoord(fileIndex, rankIndex);
-            bool highlight = squareIndex == lastMoveSquare;
+            int fileIndex = blackAtTop ? 7 - x : x;
+            int squareIndex = Board::indexFromCoord(fileIndex, rankIndex);
+            bool isLightSquare = (fileIndex + rankIndex) % 2 != 0;
             int piece = board.square[squareIndex];
+            bool highlight = squareIndex == lastMoveSquare;
 
+            // Set background color based on square color and highlight status
             if (highlight) {
-                result << "|(" << Piece::getPieceSymbol(piece) << ")";
+                result << HIGHLIGHT_BG;
+            } else if (isLightSquare) {
+                result << WHITE_SQUARE_BG;
             } else {
-                result << "| " << Piece::getPieceSymbol(piece) << " ";
+                result << BLACK_SQUARE_BG;
             }
 
-            if (x == 7) {
-                // Show rank number
-                result << "| " << (rankIndex + 1) << "\n";
+            // Set foreground color based on piece color
+            if (piece != Piece::None) {
+                bool isWhitePiece = !Piece::isColor(piece, Piece::Black);
+                result << (isWhitePiece ? WHITE_PIECE_FG : BLACK_PIECE_FG);
+                result << " " << Piece::getPieceSymbol(piece) << " ";
+            } else {
+                result << "   "; // Empty square
             }
+
+            result << RESET; // Reset all formatting
         }
 
-        if (y == 7) {
-            // Show file names
-            result << "+---+---+---+---+---+---+---+---+\n";
-            const std::string fileNames = "  a   b   c   d   e   f   g   h  ";
-            const std::string fileNamesRev = "  h   g   f   e   d   c   b   a  ";
-            result << (blackAtTop ? fileNames : fileNamesRev) << "\n\n";
-
-            if (includeFen) {
-                result << "Fen         : " << Fen::currentFen(board, true) << "\n";
-            }
-        }
+        result << "│\n";
     }
+    // Board frame bottom
+    result << "  └────────────────────────┘\n";
 
+    // File letters at the bottom
+    result << "    ";
+    for (int x = 0; x < 8; x++) {
+        int fileIndex = blackAtTop ? 7 - x : x;
+        result << Board::fileNames[fileIndex] << "  ";
+    }
+    result << "\n";
+
+    // Include FEN string if requested
+    if (includeFen) {
+        result << "FEN: " << Fen::currentFen(board, true) << "\n";
+    }
+    result << "=============================================" << "\n";
     return result.str();
 }
 
@@ -483,11 +508,11 @@ void Board::loadPosition(Fen::PositionInfo* posInfo) {
     allPiecesBitboard = colorBitboards[whiteIndex] | colorBitboards[blackIndex];
 
     // Create GameState
-    const auto whiteCastle = ((posInfo->whiteCastleKingside) ? 1 << 0 : 0) |
-                             ((posInfo->whiteCastleQueenside) ? 1 << 1 : 0);
+    const auto whiteCastle =
+        ((posInfo->whiteCastleKingside) ? 1 << 0 : 0) | ((posInfo->whiteCastleQueenside) ? 1 << 1 : 0);
 
-    const auto blackCastle = ((posInfo->blackCastleKingside) ? 1 << 0 : 0) |
-                             ((posInfo->blackCastleQueenside) ? 1 << 1 : 0);
+    const auto blackCastle =
+        ((posInfo->blackCastleKingside) ? 1 << 0 : 0) | ((posInfo->blackCastleQueenside) ? 1 << 1 : 0);
 
     const auto castlingRights = (posInfo->moveCount - 1) * 2 + (isWhiteToMove ? 0 : 1);
 
@@ -617,13 +642,11 @@ int main() {
 
     // Test en passant
     Board enPassantBoard = Board::createBoard("8/8/8/p7/P7/8/8/8 w - a6 0 1");
-    std::cout << "Before En Passant Capture:\n"
-              << static_cast<std::string>(enPassantBoard) << std::endl;
+    std::cout << "Before En Passant Capture:\n" << static_cast<std::string>(enPassantBoard) << std::endl;
     Move whiteEnPassant(Board::squareIndexFromName("a5"), Board::squareIndexFromName("b6"),
                         MoveFlag::EnPassantCaptureFlag);
     enPassantBoard.makeMove(whiteEnPassant, false);
-    std::cout << "After En Passant Capture:\n"
-              << static_cast<std::string>(enPassantBoard) << std::endl;
+    std::cout << "After En Passant Capture:\n" << static_cast<std::string>(enPassantBoard) << std::endl;
     enPassantBoard.unmakeMove(whiteEnPassant, false);
     std::cout << "After undoing En Passant Capture:\n"
               << static_cast<std::string>(enPassantBoard) << std::endl;
