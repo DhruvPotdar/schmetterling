@@ -74,7 +74,7 @@ class Board {
     std::vector<Move> allGameMoves;
 
     // # Side to move info
-    bool isWhiteToMove;
+    bool isWhiteToMove = true;
     // std::stack<uint64_t> repititionPositionHistory;
 
     void initialize();

@@ -532,7 +532,7 @@ void Board::loadPosition(std::string fen) {
 void Board::loadStartPosition() { loadPosition(Fen::startPositionFen); }
 
 Board Board::createBoard(std::string fen = Fen::startPositionFen) {
-    Board board{};
+    Board board;
     board.loadPosition(fen);
     return board;
 }

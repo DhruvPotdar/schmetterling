@@ -1,5 +1,6 @@
 #include "helpers/fen.hpp"
 #include "board/board.hpp"
+#include <iostream>
 #include <string>
 
 std::string Fen::currentFen(const Board& board, bool alwaysIncludeEnPassantSquare) {
@@ -7,15 +8,19 @@ std::string Fen::currentFen(const Board& board, bool alwaysIncludeEnPassantSquar
     for (auto rank = 7; rank >= 0; rank--) {
         auto numEmptyFiles = 0;
         for (auto file = 0; file < 8; file++) {
+
             auto index = rank * 8 + file;
             auto piece = board.square[index];
+
             if (piece != Piece::None) {
                 if (numEmptyFiles != 0) {
                     fen += std::to_string(numEmptyFiles);
                     numEmptyFiles = 0;
                 }
+
                 const auto isBlack = Piece::isColor(piece, Piece::Black);
                 const auto pieceClass = Piece::pieceClass(piece);
+
                 char pieceChar = ' ';
                 switch (pieceClass) {
                 case Piece::Rook:
@@ -37,7 +42,9 @@ std::string Fen::currentFen(const Board& board, bool alwaysIncludeEnPassantSquar
                     pieceChar = 'P';
                     break;
                 }
+
                 fen += isBlack ? std::tolower(pieceChar) : pieceChar;
+
             } else {
                 numEmptyFiles++;
             }
@@ -55,10 +62,12 @@ std::string Fen::currentFen(const Board& board, bool alwaysIncludeEnPassantSquar
 
     // Castling
 
+    std::cout << "\nCastling Rights: " << board.currentGameState.castlingRights << "\n";
     const auto whiteKingside = (board.currentGameState.castlingRights & 1) == 1;
     const auto whiteQueenside = (board.currentGameState.castlingRights >> 1 & 1) == 1;
     const auto blackKingside = (board.currentGameState.castlingRights >> 2 & 1) == 1;
     const auto blackQueenside = (board.currentGameState.castlingRights >> 3 & 1) == 1;
+
     fen += ' ';
     fen += (whiteKingside) ? "K" : "";
     fen += (whiteQueenside) ? "Q" : "";
@@ -69,7 +78,7 @@ std::string Fen::currentFen(const Board& board, bool alwaysIncludeEnPassantSquar
     // En passant
     fen += ' ';
     const auto enPassantFileIndex = board.currentGameState.enPassantFile - 1;
-    const auto enPassantRankIndex = (board.isWhiteToMove) ? 5 : 2;
+    const auto enPassantRankIndex = (board.isWhiteToMove) ? 2 : 5;
     const auto isEnPassant = enPassantFileIndex != -1;
     const auto includeEnPassant = alwaysIncludeEnPassantSquare ||
                                   enPassantCanBeCaptured(enPassantFileIndex, enPassantRankIndex, board);
@@ -81,11 +90,11 @@ std::string Fen::currentFen(const Board& board, bool alwaysIncludeEnPassantSquar
 
     // 50 Move counter
     fen += ' ';
-    fen += board.currentGameState.fiftyMoveCounter;
+    fen += std::to_string(board.currentGameState.fiftyMoveCounter);
 
     // Full move counter
     fen += ' ';
-    fen += (board.plyCount / 2) + 1;
+    fen += std::to_string((board.plyCount / 2) + 1);
 
     return fen;
 }

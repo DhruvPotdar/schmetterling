@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 
 cd build
-ctest
+export GTEST_COLOR=1
+ctest --output-on-failure
