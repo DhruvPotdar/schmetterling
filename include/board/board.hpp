@@ -1,99 +1,92 @@
-/**
- * @file
- * @brief: Represents the current state of the board during a game. The state includes things such
- * as: positions of all pieces, side to move, castling rights, en-passant square, etc. Some extra
- * information is included as well to help with evaluation and move generation.
- */
-
 #pragma once
 
-#include "board/coord.hpp"
-#include "board/pieceList.hpp"
+#include "../moves/moves.hpp"
+#include "bitboard.hpp"
+#include "fen.hpp"
 
-#include "helpers/fen.hpp"
-#include "moves.hpp"
-#include "state.hpp"
-
+#include <array>
 #include <cstdint>
-#include <stack>
+#include <optional>
+#include <string>
 #include <vector>
 
-class Fen;
-// struct PositionInfo;
+class FEN;
 
-typedef uint64_t board;
+struct BoardState {
+    std::array<BitBoard, 12> piecesBitBoards; // Indexed as Side * 6 + (int) PieceType
+    std::array<BitBoard, 2> colorBitBoards;   // One for each color
+    std::array<BitBoard, 2> diagonalSliders;  // Bishops + Queens (White, Black)
+    std::array<BitBoard, 2> orthoSliders;     // Rooks + Queens (White, Black)
+};
 
-/**
- * @class Board
- * @brief Board related functionality(including some bitboard stuff)
- * The initial state of the board can be set from a Fen string, and moves are
- * subsequently made (or undone) using the MakeMove and UnmakeMove functions.
- */
+struct BoardHistory {
+    BoardState state;
+    Side side;
+    int castlingRights;
+    std::optional<Square> enPassantSquare;
+    int halfMoveClock;
+    int fullMoveClock;
+    Piece capturedPiece;
+    Move lastMove;
+};
+
 class Board {
   public:
-    static const auto whiteIndex = 0;
-    static const auto blackIndex = 1;
+    // Current Board
+    BoardState currentState;
 
-    // Stores piece code for each square on the board
-    std::vector<int> square;
+    /// Side to move, 0 - white, 1 - black
+    Side side;
+    // Castling rights (bitmask: WhiteKingside | WhiteQueenside | BlackKingside | BlackQueenside)
+    uint8_t castlingRights;
+    std::optional<Square> enPassantSquare;
+    // Number of halfmoves wrt to the fiftyMove draw rule. It is reset at a pawn move or a capture move
+    // and incremented otherwise
+    int halfMoveClock;
+    // Number of fullmoves in the game, starts at 1 and is incremented after blacks move
+    int fullMoveClock;
+    bool inCheckCache;
 
-    // Square Index of black and white king
-    std::array<int, 2> kingSquare;
+    struct UndoInfo {
+        Square from;
+        Square to;
+        Piece movedPiece;
+        std::optional<Piece> capturedPiece;
+        std::optional<PieceType> promotion;
+        std::optional<Square> previousEnPassantSquare;
+        uint8_t previousCastlingRights;
+        int previousHalfmoveClock;
+    };
+    std::vector<UndoInfo> moveHistory;
 
-    // Bitboards
-    // Vector containing a bitboard For Each Piece type and color(i.e. black and
-    // white)
-    std::vector<board> piecesBitBoards;
+    static constexpr int whiteKingside = 0b0001;
+    static constexpr int whiteQueenside = 0b0010;
+    static constexpr int blackKingside = 0b0100;
+    static constexpr int blackQueenside = 0b1000;
 
-    // Bitboards for all pieces of either colour (all white pieces, all black
-    // pieces)
-    std::vector<board> colorBitboards;
-    board allPiecesBitboard;
+    Board() {
+        // Initialise Empty bitboard;
+        currentState.colorBitBoards.fill(BitBoard());
+        currentState.piecesBitBoards.fill(0);
+        side = Side::White;
+        castlingRights = whiteKingside | whiteQueenside | blackKingside | blackQueenside;
+        enPassantSquare = std::nullopt;
+        halfMoveClock = 0;
+        fullMoveClock = 1;
 
-    // Pieces by their movement abilities
-    board friendlyOrthogonalSliders;
-    board friendlyDiagonalSliders;
-    board enemyOrthogonalSliders;
-    board enemyDiagonalSliders;
+        updateSliderBitboards();
+    }
 
-    // Piece count excluding pawns and kings
-    int totalPieceCountWithoutPawnsAndKings;
+    Board(std::string fen) { FEN::parse(fen, *this); }
+    std::string toFEN() const { return FEN::generate(*this); }
 
-    // # Piece lists
-    // For per-color lists
-    std::array<PieceList, 2> Bishops;
-    std::array<PieceList, 2> Queens;
-    std::array<PieceList, 2> Knights;
-    std::array<PieceList, 2> Pawns;
-    std::array<PieceList, 2> Rooks;
+    Piece getPieceAt(Square s) const;
 
-    GameState currentGameState;
-    // Ply is a half move
-    int plyCount;
-
-    std::vector<Move> allGameMoves;
-
-    // # Side to move info
-    bool isWhiteToMove = true;
-    // std::stack<uint64_t> repititionPositionHistory;
-
-    void initialize();
-    int getFiftyMoveCounter() { return currentGameState.fiftyMoveCounter; }
-    std::string getCurrentFen();
-
-    int getMoveColor() { return isWhiteToMove ? Piece::White : Piece::Black; }
-    int getOpponentColor() { return isWhiteToMove ? Piece::Black : Piece::White; }
-    int getOpponentMoveColorIndex() { return isWhiteToMove ? whiteIndex : blackIndex; }
-    int getMoveColorIndex() { return isWhiteToMove ? whiteIndex : blackIndex; }
-
-    void makeMove(Move move, bool inSearch);
-    void unmakeMove(Move move, bool inSearch);
-
-    void movePiece(piece_t movedPiece, int startSquare, int targetSquare);
-    void updateSliderBitboards();
+    UndoInfo makeMove(Square from, Square to);
+    void unMakeMove(Square from, Square to, const UndoInfo& undoInfo);
+    void movePiece(Piece movedPiece, int startSquareIndex, int targetSquareIndex);
     void makeNullMove();
-    void unmakeNullMove();
-
+    void unmakeNullMove(const UndoInfo& undoInfo);
     /**
      * @brief Checks if the current player is in check
      * Note: caches check value so calling multiple
@@ -101,82 +94,8 @@ class Board {
      * @return  true if the current player is in check
      */
     bool isInCheck();
-    bool calculateInCheckState();
-    void loadStartPosition();
-    void loadPosition(Fen::PositionInfo* posInfo);
-    void loadPosition(std::string fen);
-    static Board createBoard(std::string fen);
-    static Board createBoard(Board source);
-
-    operator std::string() const {
-        // return Board::createDiagram(*this, !isWhiteToMove, true);
-
-        return Board::createDiagram(*this, true, true);
-    }
-
-    static const std::array<Coord, 4> rookDirections;
-    static const std::array<Coord, 4> bishopDirections;
-
-    constexpr static const std::string fileNames = "abcdefgh";
-    constexpr static const std::string rankNames = "12345678";
-
-    static const int a1 = 0;
-    static const int b1 = 1;
-    static const int c1 = 2;
-    static const int d1 = 3;
-    static const int e1 = 4;
-    static const int f1 = 5;
-    static const int g1 = 6;
-    static const int h1 = 7;
-
-    static const int a8 = 56;
-    static const int b8 = 57;
-    static const int c8 = 58;
-    static const int d8 = 59;
-    static const int e8 = 60;
-    static const int f8 = 61;
-    static const int g8 = 62;
-    static const int h8 = 63;
-
-    // Rank (0 to 7) of square
-    static int rankIndex(int squareIndex) { return squareIndex >> 3; }
-
-    // File (0 to 7) of square
-    static int fileIndex(int squareIndex) { return squareIndex & 0b000111; }
-
-    static int indexFromCoord(int fileIndex, int rankIndex) { return rankIndex * 8 + fileIndex; }
-
-    static int indexFromCoord(const Coord& coord) { return indexFromCoord(coord.x, coord.y); }
-
-    static Coord coordFromIndex(int squareIndex) {
-        return Coord(fileIndex(squareIndex), rankIndex(squareIndex));
-    }
-
-    static bool lightSquare(int fileIndex, int rankIndex) { return (fileIndex + rankIndex) % 2 != 0; }
-
-    static bool LightSquare(int squareIndex) {
-        return lightSquare(fileIndex(squareIndex), rankIndex(squareIndex));
-    }
-
-    static std::string squareNameFromCoordinate(int fileIndex, int rankIndex) {
-        return std::string(1, fileNames[fileIndex]) + std::to_string(rankIndex + 1);
-    }
-
-    static std::string squareNameFromIndex(int squareIndex) {
-        return squareNameFromCoordinate(coordFromIndex(squareIndex));
-    }
-
-    static std::string squareNameFromCoordinate(const Coord& coord) {
-        return squareNameFromCoordinate(coord.x, coord.y);
-    }
-
-    static int squareIndexFromName(const std::string& name) {
-        char fileName = name[0];
-        char rankName = name[1];
-        int fileIndex = fileNames.find(fileName);
-        int rankIndex = rankNames.find(rankName);
-        return indexFromCoord(fileIndex, rankIndex);
-    }
+    bool calculateInCheckState() const;
+    void updateSliderBitboards();
 
     // ANSI color codes for the diagram
     static constexpr std::string RESET = "\033[0m";
@@ -184,15 +103,11 @@ class Board {
     static constexpr std::string WHITE_BG = "\033[47m";
     static constexpr std::string BLACK_FG = "\033[30m";
     static constexpr std::string WHITE_FG = "\033[37m";
-    static constexpr std::string HIGHLIGHT_BG = "\033[43m"; // Yellow background for highlighting
-    static std::string createDiagram(const Board& board, bool blackAtTop, bool includeFen);
+    static constexpr std::string HIGHLIGHT_BG = "\033[43m";
+    operator std::string() { return Board::createDiagram(*this, true, true); }
 
-    static bool isValidCoordinate(int x, int y) { return x >= 0 && x < 8 && y >= 0 && y < 8; }
+    const std::string createDiagram(const Board& board, const bool blackAtTop = true,
+                                    bool const includeFen = true);
 
-  private:
-    std::array<PieceList, Piece::MaxPieceIndex + 1> allPieceLists;
-    std::vector<GameState> gameStateHistory;
-    bool cachedInCheckValue;
-    bool hasCachedInCheckValue;
-    Fen::PositionInfo* startPositionInfo;
+    Board& operator=(const Board&) = default;
 };

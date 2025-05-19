@@ -35,4 +35,4 @@ echo " Build successful! Running schmetterling..."
 echo "==================================="
 
 # Run the program
-./schmetterling
+./schmetterling_exec
