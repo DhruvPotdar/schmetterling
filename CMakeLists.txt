@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 4.0)
 project(schmetterling LANGUAGES CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# set(CMAKE_BUILD_TYPE Debug)
+
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -42,11 +44,11 @@ add_library(
 
 # Add test executable
 add_executable(runUnitTests
-    test/board/test_bitboard.cpp
     test/board/test_squares.cpp
-    test/board/test_fen.cpp
-    test/board/test_board.cpp
     test/moves/test_moves.cpp
+    test/board/test_bitboard.cpp
+    test/board/test_board.cpp
+    test/board/test_fen.cpp
 )
 
 # Link GoogleTest and your library

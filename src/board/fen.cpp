@@ -52,7 +52,8 @@ void FEN::parsePiecePlacement(const std::string& placement, Board& board) {
         } else {
             Square sq(file, rank);
             Piece piece(c);
-            board.currentState.piecesBitBoards[piece.pieceIndex].set(sq);
+
+            board.currentState.piecesBitBoards[piece.pieceIndex()].set(sq);
             board.currentState.colorBitBoards[piece.side].set(sq);
             file++;
         }

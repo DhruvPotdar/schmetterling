@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cassert>
+#include <cctype>
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
@@ -33,33 +34,39 @@ class Square {
     // Constructors
     Square() : index_(-1) {}
 
-    explicit Square(int index) {
+    Square(const int index) {
         if (index < -1 || index > 63) {
             throw std::out_of_range("Square index must be between -1 and 63");
         }
         index_ = index;
     }
 
-    Square(int file, int rank) {
+    Square(const int file, const int rank) {
         if (file < 0 || file > 7 || rank < 0 || rank > 7) {
             throw std::out_of_range("File and rank must be between 0 and 7");
         }
         index_ = file + rank * 8;
     }
 
-    Square(char fileChar, int rank) {
+    Square(const char fileChar, const int rank) {
         if (fileChar < 'A' || fileChar > 'H' || rank < 1 || rank > 8) {
             throw std::out_of_range("Invalid file or rank");
         }
         index_ = (fileChar - 'A') + (rank - 1) * 8;
     }
 
-    Square(const std::string& alg) {
-        if (alg.size() != 2 || alg[0] < 'A' || alg[0] > 'H' || alg[1] < '1' || alg[1] > '8') {
+    Square(const std::string& algebraic) {
+        auto algebraicNotation = algebraic;
+        algebraicNotation[0] = std::toupper(algebraicNotation[0]);
+
+        if (algebraicNotation.size() != 2 || algebraicNotation[0] < 'A' || algebraicNotation[0] > 'H' ||
+            algebraicNotation[1] < '1' || algebraicNotation[1] > '8') {
             throw std::invalid_argument("Invalid algebraic notation");
         }
-        int file = alg[0] - 'A';
-        int rank = alg[1] - '1';
+
+        const auto file = algebraicNotation[0] - 'A';
+        const auto rank = algebraicNotation[1] - '1';
+
         index_ = file + rank * 8;
     }
 
@@ -106,8 +113,8 @@ class Square {
     // Offset operations
     Square offset(const Offset& d) const {
         assert(*this != Square::None && "Cannot offset from None");
-        int fx = getFile() + d.file;
-        int ry = getRankIndex() + d.rank;
+        const auto fx = getFile() + d.file;
+        const auto ry = getRankIndex() + d.rank;
         if (fx < 0 || fx > 7 || ry < 0 || ry > 7) {
             throw std::out_of_range("Offset leads outside the board");
         }
@@ -116,8 +123,8 @@ class Square {
 
     Square tryOffset(const Offset& d) const {
         if (*this == Square::None) return Square::None;
-        int fx = getFile() + d.file;
-        int ry = getRankIndex() + d.rank;
+        const auto fx = getFile() + d.file;
+        const auto ry = getRankIndex() + d.rank;
         if (fx < 0 || fx > 7 || ry < 0 || ry > 7) return Square::None;
         return Square(fx, ry);
     }
@@ -134,8 +141,8 @@ class Square {
         if (*this == Square::None || o == Square::None) {
             return std::numeric_limits<uint8_t>::max();
         }
-        int dx = std::abs(getFile() - o.getFile());
-        int dy = std::abs(getRankIndex() - o.getRankIndex());
+        const auto dx = std::abs(getFile() - o.getFile());
+        const auto dy = std::abs(getRankIndex() - o.getRankIndex());
         return static_cast<uint8_t>(dx + dy);
     }
 

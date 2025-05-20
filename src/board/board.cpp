@@ -1,30 +1,37 @@
 
 #include "board/board.hpp"
+#include "board/squares.hpp"
+#include "board/types.hpp"
+#include <iostream>
 #include <sstream>
+#include <string>
 
-void Board::movePiece(Piece p, int start, int target) {
+// Define static member
+const std::string Board::startPositionFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+void Board::movePiece(const Piece movedPiece, const int start, const int target) {
     Square from(start);
     Square to(target);
 
     // Clear the piece from the starting square
-    currentState.piecesBitBoards[p.pieceIndex].clear(from);
-    currentState.colorBitBoards[p.side].clear(from);
+
+    currentState.piecesBitBoards[movedPiece.pieceIndex()].clear(from);
+    currentState.colorBitBoards[movedPiece.side].clear(from);
 
     // Set the piece at the target square
-    currentState.piecesBitBoards[p.pieceIndex].set(to);
-    currentState.colorBitBoards[p.side].set(to);
+    currentState.piecesBitBoards[movedPiece.pieceIndex()].set(to);
+    currentState.colorBitBoards[movedPiece.side].set(to);
 }
 
 void Board::updateSliderBitboards() {
     for (Side side : {Side::White, Side::Black}) {
-        int base = static_cast<int>(side) * 6;
+        const auto base = static_cast<int>(side) * 6;
         BitBoard bishops = currentState.piecesBitBoards[base + static_cast<int>(PieceType::Bishop)];
         BitBoard rooks = currentState.piecesBitBoards[base + static_cast<int>(PieceType::Rook)];
         BitBoard queens = currentState.piecesBitBoards[base + static_cast<int>(PieceType::Queen)];
 
         // Update diagonal sliders (bishops and queens)
         currentState.diagonalSliders[side] = bishops | queens;
-
         // Update orthogonal sliders (rooks and queens)
         currentState.orthoSliders[side] = rooks | queens;
     }
@@ -36,11 +43,32 @@ Piece Board::getPieceAt(Square s) const {
     }
 
     // Iterate over all piece bitboards (12 total: 6 per side)
-    for (int i = 0; i < 12; ++i) {
+    for (auto i = 0; i < 12; ++i) {
+
         if (currentState.piecesBitBoards[i].contains(s)) {
             // Calculate side and piece type from index
-            Side side = static_cast<Side>(i / 6);           // 0 for White, 1 for Black
-            PieceType type = static_cast<PieceType>(i % 6); // 0=None, 1=Pawn, ..., 6=King
+            const auto side = static_cast<Side>(i / 6);        // 0 for White, 1 for Black
+            const auto type = static_cast<PieceType>((i % 6)); // 0=None, 1=Pawn, ..., 6=King
+            return Piece(type, side);
+        }
+    }
+
+    // No piece found at the square
+    return Piece(PieceType::None, Side::White);
+}
+Piece Board::getPieceAt(std::string squareName) const {
+    const auto s = Square(squareName);
+    if (!s.isValid()) {
+        return Piece(PieceType::None, Side::White); // Return none for invalid squares
+    }
+
+    // Iterate over all piece bitboards (12 total: 6 per side)
+    for (int i = 0; i < 12; ++i) {
+
+        if (currentState.piecesBitBoards[i].contains(s)) {
+            // Calculate side and piece type from index
+            Side side = static_cast<Side>(i / 6);             // 0 for White, 1 for Black
+            PieceType type = static_cast<PieceType>((i % 6)); // 0=None, 1=Pawn, ..., 6=King
             return Piece(type, side);
         }
     }
@@ -55,12 +83,13 @@ Board::UndoInfo Board::makeMove(Square from, Square to) {
                       castlingRights, halfMoveClock};
 
     // Check if this is a capture move
-    Piece targetPiece = getPieceAt(to);
-    if (targetPiece.type != PieceType::None) {
+    const auto startPiece = getPieceAt(from);
+    const auto targetPiece = getPieceAt(to);
+    if (targetPiece.type != PieceType::None && startPiece.type != PieceType::None) {
         undoInfo.capturedPiece = targetPiece;
 
         // Remove captured piece from bitboards
-        currentState.piecesBitBoards[targetPiece.pieceIndex].clear(to);
+        currentState.piecesBitBoards[targetPiece.pieceIndex()].clear(to);
         currentState.colorBitBoards[targetPiece.side].clear(to);
 
         // Reset halfmove clock on capture
@@ -71,15 +100,17 @@ Board::UndoInfo Board::makeMove(Square from, Square to) {
             to == enPassantSquare.value()) {
 
             // Determine the captured pawn's square
-            int capturedPawnRank = (side == Side::White) ? to.getRankIndex() - 1 : to.getRankIndex() + 1;
+            const auto capturedPawnRank =
+                (side == Side::White) ? to.getRankIndex() - 1 : to.getRankIndex() + 1;
             Square capturedPawnSquare(to.getFile(), capturedPawnRank);
 
             // Store the captured pawn
-            Piece capturedPawn = getPieceAt(capturedPawnSquare);
+            const auto capturedPawn = getPieceAt(capturedPawnSquare);
             undoInfo.capturedPiece = capturedPawn;
 
             // Remove the captured pawn
-            currentState.piecesBitBoards[capturedPawn.pieceIndex].clear(capturedPawnSquare);
+
+            currentState.piecesBitBoards[capturedPawn.pieceIndex()].clear(capturedPawnSquare);
             currentState.colorBitBoards[capturedPawn.side].clear(capturedPawnSquare);
 
             // Reset halfmove clock on capture
@@ -93,7 +124,7 @@ Board::UndoInfo Board::makeMove(Square from, Square to) {
         halfMoveClock = 0;
 
         // Check for pawn double move
-        int rankDiff = std::abs(to.getRankIndex() - from.getRankIndex());
+        const auto rankDiff = std::abs(to.getRankIndex() - from.getRankIndex());
         if (rankDiff == 2) {
             // Set en passant square
             int epRank = (side == Side::White) ? from.getRankIndex() + 1 : from.getRankIndex() - 1;
@@ -111,14 +142,14 @@ Board::UndoInfo Board::makeMove(Square from, Square to) {
 
         // Handle castling
         if (undoInfo.movedPiece.type == PieceType::King) {
-            int fileDiff = to.getFile() - from.getFile();
+            const auto fileDiff = to.getFile() - from.getFile();
 
             // Kingside castling
             if (fileDiff == 2) {
                 // Move the rook
                 Square rookFrom(7, from.getRankIndex());
                 Square rookTo(5, from.getRankIndex());
-                Piece rook = getPieceAt(rookFrom);
+                const auto rook = getPieceAt(rookFrom);
                 movePiece(rook, rookFrom.getIndex(), rookTo.getIndex());
             }
             // Queenside castling
@@ -126,7 +157,7 @@ Board::UndoInfo Board::makeMove(Square from, Square to) {
                 // Move the rook
                 Square rookFrom(0, from.getRankIndex());
                 Square rookTo(3, from.getRankIndex());
-                Piece rook = getPieceAt(rookFrom);
+                const auto rook = getPieceAt(rookFrom);
                 movePiece(rook, rookFrom.getIndex(), rookTo.getIndex());
             }
 
@@ -151,7 +182,7 @@ Board::UndoInfo Board::makeMove(Square from, Square to) {
 
         // Update castling rights after rook captures
         if (undoInfo.capturedPiece.has_value()) {
-            Piece captured = undoInfo.capturedPiece.value();
+            const auto captured = undoInfo.capturedPiece.value();
             if (captured.type == PieceType::Rook) {
                 if (captured.side == Side::White) {
                     if (to == Square("A1")) castlingRights &= ~whiteQueenside;
@@ -204,23 +235,24 @@ void Board::unMakeMove(Square from, Square to, const UndoInfo& undoInfo) {
             to == undoInfo.previousEnPassantSquare.value()) {
 
             // Calculate the square where the captured pawn should be restored
-            int capturedPawnRank = (undoInfo.movedPiece.side == Side::White) ? to.getRankIndex() - 1
-                                                                             : to.getRankIndex() + 1;
+            const auto capturedPawnRank = (undoInfo.movedPiece.side == Side::White)
+                                              ? to.getRankIndex() - 1
+                                              : to.getRankIndex() + 1;
             Square capturedPawnSquare(to.getFile(), capturedPawnRank);
 
             // Restore the captured pawn
-            currentState.piecesBitBoards[captured.pieceIndex].set(capturedPawnSquare);
+            currentState.piecesBitBoards[captured.pieceIndex()].set(capturedPawnSquare);
             currentState.colorBitBoards[captured.side].set(capturedPawnSquare);
         } else {
             // Restore normal capture
-            currentState.piecesBitBoards[captured.pieceIndex].set(to);
+            currentState.piecesBitBoards[captured.pieceIndex()].set(to);
             currentState.colorBitBoards[captured.side].set(to);
         }
     }
 
     // Restore castling
     if (undoInfo.movedPiece.type == PieceType::King) {
-        int fileDiff = to.getFile() - from.getFile();
+        const auto fileDiff = to.getFile() - from.getFile();
 
         // Kingside castling
         if (fileDiff == 2) {
@@ -293,12 +325,12 @@ void Board::makeNullMove() {
 
 bool Board::calculateInCheckState() const {
     // Find the king
-    Square kingSquare = Square::None;
-    int kingIndex = static_cast<int>(side) * 6 + static_cast<int>(PieceType::King);
+    auto kingSquare = Square::None;
+    const auto kingIndex = static_cast<int>(side) * 6 + static_cast<int>(PieceType::King);
     BitBoard kingBB = currentState.piecesBitBoards[kingIndex];
 
     // Find the first (and only) bit set in the king bitboard
-    for (int i = 0; i < 64; ++i) {
+    for (auto i = 0; i < 64; ++i) {
         Square sq(i);
         if (kingBB.contains(sq)) {
             kingSquare = sq;
@@ -312,15 +344,15 @@ bool Board::calculateInCheckState() const {
     }
 
     // Enemy side
-    Side enemy = !side;
+    const auto enemy = !side;
 
     // Check for pawn attacks
-    int pawnAttackDir = (side == Side::White) ? 1 : -1;
+    const auto pawnAttackDir = (side == Side::White) ? 1 : -1;
 
     // Check diagonal left
-    Square pawnCheckSquare = kingSquare.tryOffset(Offset(-1, pawnAttackDir));
+    auto pawnCheckSquare = kingSquare.tryOffset(Offset(-1, pawnAttackDir));
     if (pawnCheckSquare != Square::None) {
-        Piece piece = getPieceAt(pawnCheckSquare);
+        const auto piece = getPieceAt(pawnCheckSquare);
         if (piece.type == PieceType::Pawn && piece.side == enemy) {
             return true;
         }
@@ -329,7 +361,7 @@ bool Board::calculateInCheckState() const {
     // Check diagonal right
     pawnCheckSquare = kingSquare.tryOffset(Offset(1, pawnAttackDir));
     if (pawnCheckSquare != Square::None) {
-        Piece piece = getPieceAt(pawnCheckSquare);
+        const auto piece = getPieceAt(pawnCheckSquare);
         if (piece.type == PieceType::Pawn && piece.side == enemy) {
             return true;
         }
@@ -340,9 +372,9 @@ bool Board::calculateInCheckState() const {
                                     {1, -2},  {1, 2},  {2, -1},  {2, 1}};
 
     for (const auto& offset : knightOffsets) {
-        Square knightCheckSquare = kingSquare.tryOffset(offset);
+        const auto knightCheckSquare = kingSquare.tryOffset(offset);
         if (knightCheckSquare != Square::None) {
-            Piece piece = getPieceAt(knightCheckSquare);
+            const auto piece = getPieceAt(knightCheckSquare);
             if (piece.type == PieceType::Knight && piece.side == enemy) {
                 return true;
             }
@@ -354,7 +386,7 @@ bool Board::calculateInCheckState() const {
     const Offset diagonalOffsets[] = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
 
     for (const auto& offset : diagonalOffsets) {
-        Square checkSquare = kingSquare;
+        auto checkSquare = kingSquare;
         while (true) {
             checkSquare = checkSquare.tryOffset(offset);
             if (checkSquare == Square::None) break;
@@ -373,12 +405,12 @@ bool Board::calculateInCheckState() const {
     const Offset orthoOffsets[] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
 
     for (const auto& offset : orthoOffsets) {
-        Square checkSquare = kingSquare;
+        auto checkSquare = kingSquare;
         while (true) {
             checkSquare = checkSquare.tryOffset(offset);
             if (checkSquare == Square::None) break;
 
-            Piece piece = getPieceAt(checkSquare);
+            const auto piece = getPieceAt(checkSquare);
             if (piece.type != PieceType::None) {
                 if (Piece::isOrthoSlider(piece) && piece.side == enemy) {
                     return true;
@@ -392,9 +424,9 @@ bool Board::calculateInCheckState() const {
     const Offset kingOffsets[] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
 
     for (const auto& offset : kingOffsets) {
-        Square kingCheckSquare = kingSquare.tryOffset(offset);
+        const auto kingCheckSquare = kingSquare.tryOffset(offset);
         if (kingCheckSquare != Square::None) {
-            Piece piece = getPieceAt(kingCheckSquare);
+            const auto piece = getPieceAt(kingCheckSquare);
             if (piece.type == PieceType::King && piece.side == enemy) {
                 return true;
             }
@@ -412,109 +444,97 @@ bool Board::isInCheck() {
 }
 
 // Implementation of Board diagram creation
+
 const std::string Board::createDiagram(const Board& board, const bool blackAtTop,
                                        bool const includeFen) {
-    std::stringstream ss;
+    std::ostringstream ss;
+
+    // Get the last move's target square for highlighting (if available)
+    // int lastMoveSquare =
+    //     board.moveHistory.size() > 0 ? board.moveHistory.back().move.targetSquare() : -1;
+
+    // Board frame top
+    ss << "  ┌────────────────────────┐\n";
 
     // Print board
-    for (int r = 7; r >= 0; --r) {
-        if (blackAtTop) {
-            ss << (r + 1) << " ";
-        } else {
-            ss << (8 - r) << " ";
-        }
+    for (int y = 0; y < 8; ++y) {
+        const auto rankIndex = !blackAtTop ? y : 7 - y;
+        ss << (rankIndex + 1) << " │"; // Rank number on the left
 
-        for (int f = 0; f < 8; ++f) {
-            int actualFile = blackAtTop ? 7 - f : f;
-            Square sq(actualFile, r);
-            Piece piece = board.getPieceAt(sq);
+        for (int x = 0; x < 8; ++x) {
+            const auto fileIndex = !blackAtTop ? 7 - x : x;
+            Square sq(fileIndex, rankIndex);
+            const auto piece = board.getPieceAt(sq);
+            const auto isLightSquare = (fileIndex + rankIndex) % 2 != 0;
+            // bool highlight = sq.getIndex() == lastMoveSquare;
 
-            // Determine background color
-            bool isLightSquare = sq.isLightSquare();
-            std::string bgColor = isLightSquare ? WHITE_BG : BLACK_BG;
-
-            // Determine foreground color based on piece side
-            std::string fgColor;
-            if (piece.type == PieceType::None) {
-                fgColor = "";
-                ss << bgColor << "  " << RESET;
+            // Set background color based on square color and highlight status
+            // if (highlight) {
+            //     ss << HIGHLIGHT_BG;
+            // } else
+            if (isLightSquare) {
+                ss << WHITE_BG;
             } else {
-                fgColor = (piece.side == Side::White) ? WHITE_FG : BLACK_FG;
-
-                // Get piece character representation
-                char pieceChar;
-                switch (piece.type) {
-                case PieceType::Pawn:
-                    pieceChar = 'P';
-                    break;
-                case PieceType::Knight:
-                    pieceChar = 'N';
-                    break;
-                case PieceType::Bishop:
-                    pieceChar = 'B';
-                    break;
-                case PieceType::Rook:
-                    pieceChar = 'R';
-                    break;
-                case PieceType::Queen:
-                    pieceChar = 'Q';
-                    break;
-                case PieceType::King:
-                    pieceChar = 'K';
-                    break;
-                default:
-                    pieceChar = ' ';
-                    break;
-                }
-
-                ss << bgColor << fgColor << ' ' << pieceChar << RESET;
+                ss << BLACK_BG;
             }
+
+            // Set foreground color based on piece side
+            if (piece.type != PieceType::None) {
+                {
+                    ss << (piece.side ? BLACK_FG : WHITE_FG);
+                    ss << " " << Piece::getPieceSymbol(piece) << "";
+                }
+            } else {
+                ss << "   "; // Empty square
+            }
+            ss << RESET; // Reset formatting
         }
-        ss << std::endl;
+
+        ss << "│\n"; // Right border
     }
 
-    // Print file labels
-    ss << "  ";
-    for (int f = 0; f < 8; ++f) {
-        char fileChar = blackAtTop ? 'H' - f : 'A' + f;
-        ss << ' ' << fileChar;
+    // Board frame bottom
+    ss << "  └────────────────────────┘\n";
+
+    // File labels at the bottom
+    ss << "    ";
+    for (int x = 0; x < 8; ++x) {
+        const auto fileIndex = !blackAtTop ? 7 - x : x;
+        ss << static_cast<char>('a' + fileIndex) << "  ";
     }
-    ss << std::endl;
+    ss << "\n";
 
     // Print additional information
-    ss << "Side to move: " << (board.side == Side::White ? "White" : "Black") << std::endl;
-
-    // Print castling rights
+    ss << "Side to move: " << (board.side == Side::White ? "White" : "Black") << "\n";
     ss << "Castling: ";
     if (board.castlingRights & board.whiteKingside) ss << "K";
     if (board.castlingRights & board.whiteQueenside) ss << "Q";
     if (board.castlingRights & board.blackKingside) ss << "k";
     if (board.castlingRights & board.blackQueenside) ss << "q";
     if (board.castlingRights == 0) ss << "-";
-    ss << std::endl;
+    ss << "\n";
 
-    // Print en passant square
     ss << "En passant: ";
     if (board.enPassantSquare.has_value()) {
         ss << board.enPassantSquare.value().getAlgebraic();
     } else {
         ss << "-";
     }
-    ss << std::endl;
+    ss << "\n";
 
-    // Print move clocks
-    ss << "Halfmove clock: " << board.halfMoveClock << std::endl;
-    ss << "Fullmove number: " << board.fullMoveClock << std::endl;
+    ss << "Halfmove clock: " << board.halfMoveClock << "\n";
+    ss << "Fullmove number: " << board.fullMoveClock << "\n";
 
-    // Print check status
+    // ss << static_cast<std::string>(board.currentState.colorBitBoards[1]) << "\n";
     if (board.calculateInCheckState()) {
-        ss << "CHECK!" << std::endl;
+        ss << "CHECK!\n";
     }
 
     // Include FEN if requested
     if (includeFen) {
-        // TODO: Add FEN string generation
+        ss << "FEN: " << board.toFEN() << "\n";
     }
 
+    ss << "=============================================\n";
     return ss.str();
 }

@@ -3,7 +3,9 @@
 #include "squares.hpp"
 #include <array>
 #include <cstdint>
+#include <sstream>
 #include <stdexcept>
+class Board;
 
 class BitBoard {
   private:
@@ -15,6 +17,7 @@ class BitBoard {
 
     // Conversion to raw bitboard
     constexpr operator uint64_t() const { return _bits; }
+    operator std::string() const { return this->createDiagram(); }
 
     // Bitwise operators
     constexpr BitBoard operator&(BitBoard other) const { return BitBoard{_bits & other._bits}; }
@@ -66,6 +69,53 @@ class BitBoard {
     // Convenience: single-square bitboard
     static constexpr BitBoard of(Square square) {
         return square.isValid() ? BitBoard{1ULL << square.getIndex()} : BitBoard{0ULL};
+    }
+
+    static constexpr std::string BLACK_BG = "\033[1;48;5;66m";  // Dark teal square (#5f8787)
+    static constexpr std::string WHITE_BG = "\033[1;48;5;151m"; // Light green square (#afffaf)
+    static constexpr std::string BLACK_FG = "\033[1;38;5;232m"; // Very dark gray (#080808)
+    static constexpr std::string WHITE_FG = "\033[1;38;5;231m"; // Bright white
+    static constexpr std::string RESET = "\033[0m";
+
+    std::string createDiagram() const {
+        std::ostringstream ss;
+
+        // Board frame top
+        ss << "  ┌────────────────────────┐\n";
+
+        // Print 8x8 grid (top-down, like Board::createDiagram with blackAtTop=true)
+        for (int rank = 7; rank >= 0; --rank) {
+            ss << (rank + 1) << " │";
+            for (int file = 0; file < 8; ++file) {
+                Square sq(file, rank);
+                bool isLightSquare = (file + rank) % 2 != 0;
+                bool isSet = contains(sq);
+
+                // Set background color
+                ss << (isLightSquare ? WHITE_BG : BLACK_BG);
+
+                // Set foreground color and symbol
+                if (isSet) {
+                    ss << BLACK_FG << " ● ";
+                } else {
+                    ss << WHITE_FG << " ● ";
+                }
+
+                ss << RESET;
+            }
+            ss << "│\n";
+        }
+
+        // Board frame bottom
+        ss << "  └────────────────────────┘\n";
+
+        // File labels
+        ss << "    a  b  c  d  e  f  g  h\n";
+
+        // Optional: Add raw bit value for debugging
+        ss << "Bits: 0x" << std::hex << _bits << std::dec << "\n";
+
+        return ss.str();
     }
 };
 

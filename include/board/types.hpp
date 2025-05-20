@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include <stdexcept>
 
 class Side {
@@ -31,18 +32,24 @@ class Side {
     }
 };
 
-enum class PieceType { None = 0, Pawn = 1, Knight = 2, Bishop = 3, Rook = 4, Queen = 5, King = 6 };
+enum class PieceType { Pawn = 0, Knight = 1, Bishop = 2, Rook = 3, Queen = 4, King = 5, None = 6 };
 
 struct Piece {
     Side side;
     PieceType type;
-    int pieceIndex;
+
+    int pieceIndex() const {
+        if (type == PieceType::None) {
+            throw std::logic_error("Cannot compute pieceIndex for PieceType::None");
+        }
+        return static_cast<int>(side) * 6 + (static_cast<int>(type));
+    }
 
     Piece(char fenChar) {
         side = isupper(fenChar) ? Side::White : Side::Black;
 
         // Convert to lowercase for uniform processing
-        char lc = tolower(fenChar);
+        const auto lc = tolower(fenChar);
 
         switch (lc) {
         case 'p':
@@ -67,9 +74,17 @@ struct Piece {
             throw std::invalid_argument("Invalid FEN piece character");
         }
     }
-    Piece(PieceType pieceType, Side pieceColor)
-        : side(pieceColor), type(pieceType),
-          pieceIndex(static_cast<int>(pieceColor) * 6 + static_cast<int>(pieceType)) {}
+
+    Piece(PieceType pieceType, Side pieceColor) {
+        if (pieceType <= PieceType::None && pieceColor <= 1) {
+            side = pieceColor;
+            type = pieceType;
+        } else {
+            std::cout << "WARNING WRONG Piece Declared" << "\n";
+        }
+    }
+
+    Piece(int pieceIndex) {}
 
     static bool isSide(Piece piece, Side color) { return (piece.side == color); }
 
@@ -83,5 +98,31 @@ struct Piece {
     // Piece is Rook or Queen
     static bool isOrthoSlider(Piece piece) {
         return (piece.type == PieceType::Rook) || (piece.type == PieceType::Queen);
+    }
+    static std::string getPieceSymbol(Piece piece) {
+        std::string pieceSymbol;
+        switch (piece.type) {
+        case PieceType::Rook:
+            pieceSymbol = "󰡛 ";
+            break;
+        case PieceType::Knight:
+            pieceSymbol = "󰡘 ";
+            break;
+        case PieceType::Bishop:
+            pieceSymbol = "󰡜 ";
+            break;
+        case PieceType::Queen:
+            pieceSymbol = "󰡚 ";
+            break;
+        case PieceType::King:
+            pieceSymbol = "󰡗 ";
+            break;
+        case PieceType::Pawn:
+            pieceSymbol = "󰡙 ";
+            break;
+        default:
+            pieceSymbol = ' ';
+        };
+        return pieceSymbol;
     }
 };
