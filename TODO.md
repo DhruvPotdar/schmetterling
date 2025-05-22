@@ -1,3 +1,6 @@
+#
+- [x] Board + Bitboard logic
+
 #### Design Patterns
 - **Dependency Injection**: Pass dependencies (e.g., `Evaluation` to `Search`) via templates or constructor parameters to decouple components and ease testing.
 - **Command Pattern**: Model UCI commands as command objects (e.g., `UciCommandPosition`, `UciCommandGo`) for clean parsing and execution.

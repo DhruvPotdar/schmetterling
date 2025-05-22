@@ -7,11 +7,12 @@
 #include <string>
 
 // Define static member
-const std::string Board::startPositionFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+const std::string Board::startPositionFen =
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 void Board::movePiece(const Piece movedPiece, const int start, const int target) {
-    Square from(start);
-    Square to(target);
+    const Square from(start);
+    const Square to(target);
 
     // Clear the piece from the starting square
 
@@ -37,7 +38,7 @@ void Board::updateSliderBitboards() {
     }
 }
 
-Piece Board::getPieceAt(Square s) const {
+Piece Board::getPieceAt(const Square s) const {
     if (!s.isValid()) {
         return Piece(PieceType::None, Side::White); // Return none for invalid squares
     }
@@ -56,28 +57,13 @@ Piece Board::getPieceAt(Square s) const {
     // No piece found at the square
     return Piece(PieceType::None, Side::White);
 }
-Piece Board::getPieceAt(std::string squareName) const {
+
+Piece Board::getPieceAt(const std::string squareName) const {
     const auto s = Square(squareName);
-    if (!s.isValid()) {
-        return Piece(PieceType::None, Side::White); // Return none for invalid squares
-    }
-
-    // Iterate over all piece bitboards (12 total: 6 per side)
-    for (int i = 0; i < 12; ++i) {
-
-        if (currentState.piecesBitBoards[i].contains(s)) {
-            // Calculate side and piece type from index
-            Side side = static_cast<Side>(i / 6);             // 0 for White, 1 for Black
-            PieceType type = static_cast<PieceType>((i % 6)); // 0=None, 1=Pawn, ..., 6=King
-            return Piece(type, side);
-        }
-    }
-
-    // No piece found at the square
-    return Piece(PieceType::None, Side::White);
+    return getPieceAt(s);
 }
 
-Board::UndoInfo Board::makeMove(Square from, Square to) {
+Board::UndoInfo Board::makeMove(const Square from, const Square to) {
     UndoInfo undoInfo{from,           to,           getPieceAt(from),
                       std::nullopt,   std::nullopt, enPassantSquare,
                       castlingRights, halfMoveClock};
@@ -102,7 +88,7 @@ Board::UndoInfo Board::makeMove(Square from, Square to) {
             // Determine the captured pawn's square
             const auto capturedPawnRank =
                 (side == Side::White) ? to.getRankIndex() - 1 : to.getRankIndex() + 1;
-            Square capturedPawnSquare(to.getFile(), capturedPawnRank);
+            const Square capturedPawnSquare(to.getFile(), capturedPawnRank);
 
             // Store the captured pawn
             const auto capturedPawn = getPieceAt(capturedPawnSquare);
@@ -216,7 +202,7 @@ Board::UndoInfo Board::makeMove(Square from, Square to) {
     inCheckCache = false;
 
     // Store move in history
-    moveHistory.push_back(undoInfo);
+    undoHistory.push_back(undoInfo);
 
     return undoInfo;
 }
@@ -227,7 +213,7 @@ void Board::unMakeMove(Square from, Square to, const UndoInfo& undoInfo) {
 
     // Restore captured piece if any
     if (undoInfo.capturedPiece.has_value()) {
-        Piece captured = undoInfo.capturedPiece.value();
+        const auto captured = undoInfo.capturedPiece.value();
 
         // Handle en passant capture specially
         if (undoInfo.movedPiece.type == PieceType::Pawn &&
@@ -257,17 +243,17 @@ void Board::unMakeMove(Square from, Square to, const UndoInfo& undoInfo) {
         // Kingside castling
         if (fileDiff == 2) {
             // Move the rook back
-            Square rookFrom(7, from.getRankIndex());
-            Square rookTo(5, from.getRankIndex());
-            Piece rook(PieceType::Rook, undoInfo.movedPiece.side);
+            const Square rookFrom(7, from.getRankIndex());
+            const Square rookTo(5, from.getRankIndex());
+            const Piece rook(PieceType::Rook, undoInfo.movedPiece.side);
             movePiece(rook, rookTo.getIndex(), rookFrom.getIndex());
         }
         // Queenside castling
         else if (fileDiff == -2) {
             // Move the rook back
-            Square rookFrom(0, from.getRankIndex());
-            Square rookTo(3, from.getRankIndex());
-            Piece rook(PieceType::Rook, undoInfo.movedPiece.side);
+            const Square rookFrom(0, from.getRankIndex());
+            const Square rookTo(3, from.getRankIndex());
+            const Piece rook(PieceType::Rook, undoInfo.movedPiece.side);
             movePiece(rook, rookTo.getIndex(), rookFrom.getIndex());
         }
     }
@@ -292,8 +278,8 @@ void Board::unMakeMove(Square from, Square to, const UndoInfo& undoInfo) {
     inCheckCache = false;
 
     // Remove the last entry from move history
-    if (!moveHistory.empty()) {
-        moveHistory.pop_back();
+    if (!undoHistory.empty()) {
+        undoHistory.pop_back();
     }
 }
 
@@ -303,7 +289,7 @@ void Board::makeNullMove() {
                       castlingRights, halfMoveClock};
 
     // Store the null move
-    moveHistory.push_back(nullMove);
+    undoHistory.push_back(nullMove);
 
     // Clear en passant square
     enPassantSquare = std::nullopt;
@@ -323,15 +309,18 @@ void Board::makeNullMove() {
     halfMoveClock++;
 }
 
+// TODO: Revisit one move generation is done
 bool Board::calculateInCheckState() const {
+
     // Find the king
     auto kingSquare = Square::None;
     const auto kingIndex = static_cast<int>(side) * 6 + static_cast<int>(PieceType::King);
-    BitBoard kingBB = currentState.piecesBitBoards[kingIndex];
+    const auto kingBB = currentState.piecesBitBoards[kingIndex];
 
+    // TODO: Use pop lsb here?
     // Find the first (and only) bit set in the king bitboard
     for (auto i = 0; i < 64; ++i) {
-        Square sq(i);
+        const Square sq(i);
         if (kingBB.contains(sq)) {
             kingSquare = sq;
             break;
@@ -420,8 +409,10 @@ bool Board::calculateInCheckState() const {
         }
     }
 
-    // Check for king proximity (should not happen in a legal position, but checking for completeness)
-    const Offset kingOffsets[] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
+    // Check for king proximity (should not happen in a legal position, but checking for
+    // completeness)
+    const Offset kingOffsets[] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1},
+                                  {0, 1},   {1, -1}, {1, 0},  {1, 1}};
 
     for (const auto& offset : kingOffsets) {
         const auto kingCheckSquare = kingSquare.tryOffset(offset);
@@ -450,8 +441,7 @@ const std::string Board::createDiagram(const Board& board, const bool blackAtTop
     std::ostringstream ss;
 
     // Get the last move's target square for highlighting (if available)
-    // int lastMoveSquare =
-    //     board.moveHistory.size() > 0 ? board.moveHistory.back().move.targetSquare() : -1;
+    Square lastMoveSquare = board.undoHistory.size() > 0 ? board.undoHistory.back().to : -1;
 
     // Board frame top
     ss << "  ┌────────────────────────┐\n";
@@ -464,15 +454,14 @@ const std::string Board::createDiagram(const Board& board, const bool blackAtTop
         for (int x = 0; x < 8; ++x) {
             const auto fileIndex = !blackAtTop ? 7 - x : x;
             Square sq(fileIndex, rankIndex);
-            const auto piece = board.getPieceAt(sq);
+            auto piece = board.getPieceAt(sq);
             const auto isLightSquare = (fileIndex + rankIndex) % 2 != 0;
-            // bool highlight = sq.getIndex() == lastMoveSquare;
+            bool highlight = sq == lastMoveSquare;
 
             // Set background color based on square color and highlight status
-            // if (highlight) {
-            //     ss << HIGHLIGHT_BG;
-            // } else
-            if (isLightSquare) {
+            if (highlight) {
+                ss << HIGHLIGHT_BG;
+            } else if (isLightSquare) {
                 ss << WHITE_BG;
             } else {
                 ss << BLACK_BG;
@@ -482,7 +471,7 @@ const std::string Board::createDiagram(const Board& board, const bool blackAtTop
             if (piece.type != PieceType::None) {
                 {
                     ss << (piece.side ? BLACK_FG : WHITE_FG);
-                    ss << " " << Piece::getPieceSymbol(piece) << "";
+                    ss << " " << piece.getPieceSymbol() << "";
                 }
             } else {
                 ss << "   "; // Empty square

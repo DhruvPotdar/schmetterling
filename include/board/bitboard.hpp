@@ -17,43 +17,55 @@ class BitBoard {
 
     // Conversion to raw bitboard
     constexpr operator uint64_t() const { return _bits; }
-    operator std::string() const { return this->createDiagram(); }
+    constexpr operator std::string() const { return this->createDiagram(); }
 
     // Bitwise operators
     constexpr BitBoard operator&(BitBoard other) const { return BitBoard{_bits & other._bits}; }
     constexpr BitBoard operator|(BitBoard other) const { return BitBoard{_bits | other._bits}; }
     constexpr BitBoard operator^(BitBoard other) const { return BitBoard{_bits ^ other._bits}; }
+    constexpr BitBoard operator~() const { return BitBoard{~_bits}; }
 
-    BitBoard& operator&=(BitBoard other) {
+    constexpr BitBoard& operator&=(BitBoard other) {
         _bits &= other._bits;
         return *this;
     }
-    BitBoard& operator|=(BitBoard other) {
+
+    constexpr BitBoard& operator|=(BitBoard other) {
         _bits |= other._bits;
         return *this;
     }
-    BitBoard& operator^=(BitBoard other) {
+
+    constexpr BitBoard& operator^=(BitBoard other) {
         _bits ^= other._bits;
         return *this;
     }
 
+    constexpr int LSBIndex() { return __builtin_ctzll(_bits); }
+
+    constexpr Square popLSB() {
+        if (_bits == 0) return -1; // No bits set
+        const auto index = __builtin_ctzll(_bits);
+        _bits &= _bits - 1;
+        return Square(index);
+    }
+
     // Set, clear, toggle a single square (if valid)
-    void set(Square square) {
+    constexpr void set(Square square) {
         if (!square.isValid()) throw std::out_of_range("Cannot set BitBoard: invalid square");
         _bits |= (1ULL << square.getIndex());
     }
 
-    void clear(Square square) {
+    constexpr void clear(Square square) {
         if (!square.isValid()) throw std::out_of_range("Cannot clear BitBoard: invalid square");
         _bits &= ~(1ULL << square.getIndex());
     }
 
-    void toggle(Square square) {
+    constexpr void toggle(Square square) {
         if (!square.isValid()) throw std::out_of_range("Cannot toggle BitBoard: invalid square");
         _bits ^= (1ULL << square.getIndex());
     }
 
-    bool contains(Square square) const {
+    constexpr bool contains(Square square) const {
         return square.isValid() && ((_bits >> square.getIndex()) & 1ULL);
     }
 

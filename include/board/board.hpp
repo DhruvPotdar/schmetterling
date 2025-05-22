@@ -1,3 +1,8 @@
+/**
+ * @file
+ * @brief Information about the board
+ */
+
 #pragma once
 
 #include "../moves/moves.hpp"
@@ -33,16 +38,16 @@ struct BoardHistory {
 class Board {
   public:
     static const std::string startPositionFen;
-    // Current Board
-    BoardState currentState;
 
-    /// Side to move, 0 - white, 1 - black
-    Side side;
-    // Castling rights (bitmask: WhiteKingside | WhiteQueenside | BlackKingside | BlackQueenside)
-    uint8_t castlingRights;
+    BoardState currentState; // Current Board
+
+    Side side; /// Side to move, 0 - white, 1 - black
+
+    uint8_t castlingRights; // Castling rights (bitmask: WhiteKingside | WhiteQueenside |
+                            // BlackKingside | BlackQueenside);
     std::optional<Square> enPassantSquare;
-    // Number of halfmoves wrt to the fiftyMove draw rule. It is reset at a pawn move or a capture move
-    // and incremented otherwise
+    // Number of halfmoves wrt to the fiftyMove draw rule. It is reset at a pawn move or a capture
+    // move and incremented otherwise
     int halfMoveClock;
     // Number of fullmoves in the game, starts at 1 and is incremented after blacks move
     int fullMoveClock;
@@ -50,11 +55,12 @@ class Board {
 
     // ANSI color codes for the diagram
     static constexpr std::string RESET = "\033[0m";
-    static constexpr std::string BLACK_BG = "\033[1;48;5;66m";      // Dark teal square (#5f8787)
-    static constexpr std::string WHITE_BG = "\033[1;48;5;151m";     // Light green square (#afffaf)
-    static constexpr std::string BLACK_FG = "\033[1;38;5;232m";     // Very dark gray (#080808)
-    static constexpr std::string WHITE_FG = "\033[1;38;5;231m";     // Bright white
-    static constexpr std::string HIGHLIGHT_BG = "\033[1;48;5;220m"; // Bright yellow highlight (#ffd700)
+    static constexpr std::string BLACK_BG = "\033[1;48;5;66m";  // Dark teal square (#5f8787)
+    static constexpr std::string WHITE_BG = "\033[1;48;5;151m"; // Light green square (#afffaf)
+    static constexpr std::string BLACK_FG = "\033[1;38;5;232m"; // Very dark gray (#080808)
+    static constexpr std::string WHITE_FG = "\033[1;38;5;231m"; // Bright white
+    static constexpr std::string HIGHLIGHT_BG =
+        "\033[1;48;5;220m"; // Bright yellow highlight (#ffd700)
 
     struct UndoInfo {
         Square from;
@@ -66,7 +72,7 @@ class Board {
         uint8_t previousCastlingRights;
         int previousHalfmoveClock;
     };
-    std::vector<UndoInfo> moveHistory;
+    std::vector<UndoInfo> undoHistory;
 
     static constexpr int whiteKingside = 0b0001;
     static constexpr int whiteQueenside = 0b0010;
@@ -94,6 +100,7 @@ class Board {
     Piece getPieceAt(std::string squareName) const;
 
     UndoInfo makeMove(Square from, Square to);
+    UndoInfo tryMove(Square from, Square to);
     void unMakeMove(Square from, Square to, const UndoInfo& undoInfo);
     void movePiece(Piece movedPiece, int startSquareIndex, int targetSquareIndex);
     void makeNullMove();

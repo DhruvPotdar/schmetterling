@@ -30,6 +30,7 @@ add_executable(schmetterling_exec
     thirdparty/backward.cpp
     src/board/board.cpp
     src/board/fen.cpp
+    src/moves/move_generation.cpp
 )
 
 add_library(
@@ -37,18 +38,19 @@ add_library(
     src/main.cpp
     src/board/board.cpp
     src/board/fen.cpp
+    src/moves/move_generation.cpp
 )
 
-# Add test subdirectory
-# add_subdirectory(test)
 
 # Add test executable
 add_executable(runUnitTests
     test/board/test_squares.cpp
     test/moves/test_moves.cpp
     test/board/test_bitboard.cpp
-    test/board/test_board.cpp
     test/board/test_fen.cpp
+    test/board/test_board.cpp
+
+    test/moves/test_move_generation.cpp
 )
 
 # Link GoogleTest and your library

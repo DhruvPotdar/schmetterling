@@ -54,8 +54,8 @@ class Move {
     // Extracts the move flag
     MoveFlag getMoveFlag() const { return static_cast<MoveFlag>(moveValue >> 12); }
 
-    PieceType getPromotionPieceType() {
-        const auto flag = getMoveFlag();
+    PieceType getPromotionPieceType() const {
+        auto flag = getMoveFlag();
         switch (flag) {
         case MoveFlag::PromoteToRookFlag:
             return PieceType::Rook;

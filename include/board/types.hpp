@@ -99,9 +99,10 @@ struct Piece {
     static bool isOrthoSlider(Piece piece) {
         return (piece.type == PieceType::Rook) || (piece.type == PieceType::Queen);
     }
-    static std::string getPieceSymbol(Piece piece) {
+
+    std::string getPieceSymbol() {
         std::string pieceSymbol;
-        switch (piece.type) {
+        switch (type) {
         case PieceType::Rook:
             pieceSymbol = "󰡛 ";
             break;

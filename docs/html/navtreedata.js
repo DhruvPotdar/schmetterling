@@ -24,11 +24,11 @@
 */
 var NAVTREE =
 [
-  [ "My Project", "index.html", [
+  [ "Schmetterling", "index.html", [
     [ "Schmetterling", "md_README.html", [
       [ "Docs", "md_README.html#autotoc_md1", null ]
     ] ],
-    [ "Design Patterns", "md_TODO.html", null ]
+    [ "TODO", "md_TODO.html", null ]
   ] ]
 ];
 

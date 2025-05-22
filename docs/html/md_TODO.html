@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.13.2"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>My Project: Design Patterns</title>
+<title>Schmetterling: TODO</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -32,7 +32,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">My Project
+   <div id="projectname">Schmetterling
    </div>
   </td>
     <td>        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -102,40 +102,44 @@ $(function(){initNavTree('md_TODO.html',''); initResizable(true); });
 </div>
 
 <div><div class="header">
-  <div class="headertitle"><div class="title">Design Patterns</div></div>
+  <div class="headertitle"><div class="title">TODO</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="autotoc_md2"></a></p>
+<div class="textblock"><p>#</p><ul class="check">
+<li class="checked">Board + Bitboard logic</li>
+</ul>
+<h4><a class="anchor" id="autotoc_md2"></a>
+Design Patterns</h4>
 <ul>
 <li><b>Dependency Injection</b>: Pass dependencies (e.g., <code>Evaluation</code> to <code>Search</code>) via templates or constructor parameters to decouple components and ease testing.</li>
 <li><b>Command Pattern</b>: Model UCI commands as command objects (e.g., <code>UciCommandPosition</code>, <code>UciCommandGo</code>) for clean parsing and execution.</li>
 <li><b>Facade</b>: Use the <code>Uci</code> class as a facade to orchestrate interactions between <code>Board</code>, <code>MoveGen</code>, <code>Search</code>, etc.</li>
 <li><b>Strategy</b>: Define <code>Evaluation</code> as a pluggable strategy, selectable at compile time via templates for performance.</li>
 </ul>
-<h3><a class="anchor" id="autotoc_md3"></a>
-Concurrency Handling</h3>
+<h4><a class="anchor" id="autotoc_md3"></a>
+Concurrency Handling</h4>
 <ul>
 <li><b>Initial Design</b>: Start with a single-threaded search for simplicity.</li>
 <li><b>Parallelization</b>: Extend <code>Search</code> to use <code>std::thread</code> for parallel tree exploration (e.g., Lazy SMP), with a shared transposition table protected by <code>std::mutex</code>.</li>
 <li><b>Future Considerations</b>: Explore C++20 coroutines for asynchronous tasks, though traditional threading is sufficient for now.</li>
 </ul>
-<h3><a class="anchor" id="autotoc_md4"></a>
-Best Practices</h3>
+<h4><a class="anchor" id="autotoc_md4"></a>
+Best Practices</h4>
 <ul>
 <li><b>Modern C++</b>: Use <code>constexpr</code> for compile-time constants (e.g., move tables), <code>std::optional</code> for nullable returns, and ranges for iteration.</li>
 <li><b>Performance</b>: Avoid virtual functions in hot paths (e.g., move generation, evaluation); prefer static polymorphism via templates.</li>
 <li><b>Code Organization</b>: Keep headers self-contained with forward declarations, use <code>.cpp</code> files for implementation to reduce compile-time dependencies.</li>
 <li><b>Error Handling</b>: Use exceptions for UCI parsing errors, assertions for internal invariants.</li>
 </ul>
-<h3><a class="anchor" id="autotoc_md5"></a>
-Inspiration from Stockfish</h3>
+<h4><a class="anchor" id="autotoc_md5"></a>
+Inspiration from Stockfish</h4>
 <ul>
 <li><b>Structure</b>: Adopt a similar modular breakdown (e.g., <code>bitboard.cpp</code>, <code>movegen.cpp</code>, <code>search.cpp</code>).</li>
 <li><b>Optimizations</b>: Use precomputed tables and bit manipulation techniques, adapting them to C++20 idioms.</li>
 <li><b>Caution</b>: Avoid direct code reuse due to Stockfish’s GPL license; focus on conceptual inspiration.</li>
 </ul>
-<h3><a class="anchor" id="autotoc_md6"></a>
-Testing Strategies</h3>
+<h4><a class="anchor" id="autotoc_md6"></a>
+Testing Strategies</h4>
 <ul>
 <li><b>Unit Tests</b>: Test individual components (e.g., <code>Board::make_move</code>, <code>MoveGen::generate</code>) with known inputs/outputs using Google Test.</li>
 <li><b>Perft Tests</b>: Validate move generation by comparing node counts at fixed depths against standard positions.</li>

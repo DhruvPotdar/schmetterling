@@ -1,35 +1,35 @@
-\chapter{Design Patterns}
-\hypertarget{md_TODO}{}\label{md_TODO}\index{Design Patterns@{Design Patterns}}
-\label{md_TODO_autotoc_md2}%
-\Hypertarget{md_TODO_autotoc_md2}%
-
-
+\chapter{TODO}
+\hypertarget{md_TODO}{}\label{md_TODO}\index{TODO@{TODO}}
+\#
+\begin{DoxyItemize}
+\item[\DoxyChecked] Board + Bitboard logic
+\end{DoxyItemize}\hypertarget{md_TODO_autotoc_md2}{}\doxysubsubsubsection{\texorpdfstring{Design Patterns}{Design Patterns}}\label{md_TODO_autotoc_md2}
 
 \begin{DoxyItemize}
 \item {\bfseries{Dependency Injection}}\+: Pass dependencies (e.\+g., {\ttfamily Evaluation} to {\ttfamily Search}) via templates or constructor parameters to decouple components and ease testing.
 \item {\bfseries{Command Pattern}}\+: Model UCI commands as command objects (e.\+g., {\ttfamily Uci\+Command\+Position}, {\ttfamily Uci\+Command\+Go}) for clean parsing and execution.
 \item {\bfseries{Facade}}\+: Use the {\ttfamily Uci} class as a facade to orchestrate interactions between {\ttfamily Board}, {\ttfamily Move\+Gen}, {\ttfamily Search}, etc.
 \item {\bfseries{Strategy}}\+: Define {\ttfamily Evaluation} as a pluggable strategy, selectable at compile time via templates for performance.
-\end{DoxyItemize}\hypertarget{md_TODO_autotoc_md3}{}\doxysubsubsection{\texorpdfstring{Concurrency Handling}{Concurrency Handling}}\label{md_TODO_autotoc_md3}
+\end{DoxyItemize}\hypertarget{md_TODO_autotoc_md3}{}\doxysubsubsubsection{\texorpdfstring{Concurrency Handling}{Concurrency Handling}}\label{md_TODO_autotoc_md3}
 
 \begin{DoxyItemize}
 \item {\bfseries{Initial Design}}\+: Start with a single-\/threaded search for simplicity.
 \item {\bfseries{Parallelization}}\+: Extend {\ttfamily Search} to use {\ttfamily std\+::thread} for parallel tree exploration (e.\+g., Lazy SMP), with a shared transposition table protected by {\ttfamily std\+::mutex}.
 \item {\bfseries{Future Considerations}}\+: Explore C++20 coroutines for asynchronous tasks, though traditional threading is sufficient for now.
-\end{DoxyItemize}\hypertarget{md_TODO_autotoc_md4}{}\doxysubsubsection{\texorpdfstring{Best Practices}{Best Practices}}\label{md_TODO_autotoc_md4}
+\end{DoxyItemize}\hypertarget{md_TODO_autotoc_md4}{}\doxysubsubsubsection{\texorpdfstring{Best Practices}{Best Practices}}\label{md_TODO_autotoc_md4}
 
 \begin{DoxyItemize}
 \item {\bfseries{Modern C++}}\+: Use {\ttfamily constexpr} for compile-\/time constants (e.\+g., move tables), {\ttfamily std\+::optional} for nullable returns, and ranges for iteration.
 \item {\bfseries{Performance}}\+: Avoid virtual functions in hot paths (e.\+g., move generation, evaluation); prefer static polymorphism via templates.
 \item {\bfseries{Code Organization}}\+: Keep headers self-\/contained with forward declarations, use {\ttfamily .cpp} files for implementation to reduce compile-\/time dependencies.
 \item {\bfseries{Error Handling}}\+: Use exceptions for UCI parsing errors, assertions for internal invariants.
-\end{DoxyItemize}\hypertarget{md_TODO_autotoc_md5}{}\doxysubsubsection{\texorpdfstring{Inspiration from Stockfish}{Inspiration from Stockfish}}\label{md_TODO_autotoc_md5}
+\end{DoxyItemize}\hypertarget{md_TODO_autotoc_md5}{}\doxysubsubsubsection{\texorpdfstring{Inspiration from Stockfish}{Inspiration from Stockfish}}\label{md_TODO_autotoc_md5}
 
 \begin{DoxyItemize}
 \item {\bfseries{Structure}}\+: Adopt a similar modular breakdown (e.\+g., {\ttfamily bitboard.\+cpp}, {\ttfamily movegen.\+cpp}, {\ttfamily search.\+cpp}).
 \item {\bfseries{Optimizations}}\+: Use precomputed tables and bit manipulation techniques, adapting them to C++20 idioms.
 \item {\bfseries{Caution}}\+: Avoid direct code reuse due to Stockfish’s GPL license; focus on conceptual inspiration.
-\end{DoxyItemize}\hypertarget{md_TODO_autotoc_md6}{}\doxysubsubsection{\texorpdfstring{Testing Strategies}{Testing Strategies}}\label{md_TODO_autotoc_md6}
+\end{DoxyItemize}\hypertarget{md_TODO_autotoc_md6}{}\doxysubsubsubsection{\texorpdfstring{Testing Strategies}{Testing Strategies}}\label{md_TODO_autotoc_md6}
 
 \begin{DoxyItemize}
 \item {\bfseries{Unit Tests}}\+: Test individual components (e.\+g., {\ttfamily Board\+::make\+\_\+move}, {\ttfamily Move\+Gen\+::generate}) with known inputs/outputs using Google Test.

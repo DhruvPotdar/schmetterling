@@ -7,7 +7,7 @@ int main() {
     Board board(initialFen);
 
     // Define a 10-move sequence (5 moves per side, Italian Opening with a capture)
-    std::vector<std::pair<std::string, std::string>> moves = {
+    std::vector<std::pair<std::string, std::string>> moveList = {
         {"E2", "E4"}, // 1. e4
         {"E7", "E5"}, //    ... e5
         {"G1", "F3"}, // 2. Nf3
@@ -25,11 +25,12 @@ int main() {
     std::cout << board.createDiagram(board, true, true);
 
     // Execute each move and print the board
-    for (size_t i = 0; i < moves.size(); ++i) {
-        const auto& [from, to] = moves[i];
+    for (size_t i = 0; i < moveList.size(); ++i) {
+        const auto& [from, to] = moveList[i];
         Square fromSq(from);
         Square toSq(to);
-        std::cout << "Move " << (i / 2 + 1) << (i % 2 == 0 ? ". " : "... ") << from << "-" << to << "\n";
+        std::cout << "Move " << (i / 2 + 1) << (i % 2 == 0 ? ". " : "... ") << from << "-" << to
+                  << "\n";
 
         // Make the move
         auto undoInfo = board.makeMove(fromSq, toSq);
