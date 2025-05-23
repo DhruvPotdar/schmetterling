@@ -67,6 +67,7 @@ TEST_F(MoveGeneratorTest, KingMovesFromE1) {
 TEST_F(MoveGeneratorTest, PawnPromotion) {
     board = Board("8/3P4/8/8/8/8/8/k6K w - - 0 1");
     MoveGenerator moveGen(board);
+
     Square d7("d7");
     auto moves = moveGen.generatePawnMoves(d7);
     std::vector<std::string> moveStrings;
@@ -93,32 +94,56 @@ TEST_F(MoveGeneratorTest, PawnPromotion) {
 }
 
 // Test en passant (custom position)
-TEST_F(MoveGeneratorTest, EnPassant) {
-    // board = Board("rnbqkbnr/pppp1ppp/8/4p3/3P4/8/PPP2PPP/RNBQKBNR b KQkq d3 0 2");
-    const auto board = Board("rnbqkbnr/pppp1ppp/8/4p3/3P4/8/PPP2PPP/RNBQKBNR b KQkq d3 0 2");
 
-    MoveGenerator moveGen(board);
+TEST_F(MoveGeneratorTest, EnPassantCaptures) {
+    // Test White en passant
+    {
+        board = Board("rnbqkbnr/p1pppppp/8/3P4/1pP5/8/PP2PPPP/RNBQKBNR b KQkq c3 0 3");
+        MoveGenerator moveGen(board);
+        Square square("b4");
+        auto moves = moveGen.generatePawnMoves(square);
 
-    Square f5("d4");
-    auto moves = moveGen.generatePawnMoves(f5);
+        std::vector<std::string> moveStrings;
+        for (const auto& move : moves) {
+            Square from(move.startSquareIndex());
+            Square to(move.targetSquareIndex());
+            std::string moveStr = from.getAlgebraic() + to.getAlgebraic();
+            // if (move.getFlags() == MoveFlag::EnPassantCaptureFlag) {
+            //     moveStr += "";
+            // }
+            moveStrings.push_back(moveStr);
+        }
 
-    std::cout << moves.size() << "===================\n";
-    std::vector<std::string> moveStrings;
-
-    for (const auto& move : moves) {
-        Square from(move.startSquareIndex());
-        Square to(move.targetSquareIndex());
-        std::cout << from.getAlgebraic() << "===================\n";
-        std::cout << to.getAlgebraic() << "+++++++++++++++++++++\n";
-        moveStrings.push_back(from.getAlgebraic() + to.getAlgebraic());
+        std::vector<std::string> expected = {"B4B3", "B4C3"};
+        EXPECT_EQ(moves.size(), expected.size());
+        for (const auto& move : expected) {
+            EXPECT_TRUE(std::find(moveStrings.begin(), moveStrings.end(), move) !=
+                        moveStrings.end());
+        }
     }
 
-    // std::cout << Board::createDiagram(board) << "\n";
-    // Expect g5f6 (en passant)
-    std::vector<std::string> expected = {"G5F6"};
-    EXPECT_EQ(moveStrings.size(), expected.size());
+    // Test Black en passant
+    {
+        board = Board("rnbqkbnr/p1pppppp/8/3P4/1pP5/8/PP2PPPP/RNBQKBNR b KQkq c3 0 3");
+        MoveGenerator moveGen(board);
+        Square d4("b4");
+        auto moves = moveGen.generatePawnMoves(d4);
+        std::cout << Board::createDiagram(board);
+        std::vector<std::string> moveStrings;
+        for (const auto& move : moves) {
+            Square from(move.startSquareIndex());
+            Square to(move.targetSquareIndex());
+            std::string moveStr = from.getAlgebraic() + to.getAlgebraic();
+            std::cout << moveStr << "Move String\n";
+            moveStrings.push_back(moveStr);
+        }
 
-    for (const auto& move : moveStrings) {
-        EXPECT_TRUE(std::find(expected.begin(), expected.end(), move) != expected.end());
+        std::vector<std::string> expected = {"B4B3", "B4C3"};
+        EXPECT_EQ(moves.size(), expected.size());
+
+        for (const auto& move : expected) {
+            EXPECT_TRUE(std::find(moveStrings.begin(), moveStrings.end(), move) !=
+                        moveStrings.end());
+        }
     }
 }
