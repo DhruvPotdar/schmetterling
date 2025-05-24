@@ -8,7 +8,7 @@
 #include "../moves/moves.hpp"
 #include "bitboard.hpp"
 #include "fen.hpp"
-#include "moves/move_generation.hpp"
+#include "moves/generation/move_generation.hpp"
 
 #include <array>
 #include <cstdint>

@@ -1,6 +1,6 @@
 #pragma once
-#include "../board/types.hpp"
 #include "board/squares.hpp"
+#include "board/types.hpp"
 #include <cstdint>
 
 enum class MoveFlag {
@@ -14,17 +14,22 @@ enum class MoveFlag {
     PromoteToBishopFlag = 0b0111
 };
 
-// Compact (16bit) move representation to preserve memory during search.
-//
-// The format is as follows (ffffttttttssssss)
-//
-// - Bits 0-5: [s]tart square index (6 bits = 64 possible squares to check for a
-// move)
-//
-// - Bits 6-11: [t]arget square index(6 bits = 64 possible squares to check
-// for a move)
-//
-// - Bits 12-15: [f]lag (promotion type, etc) [4 bits for flags]
+/**
+ * @class Move
+ * @brief
+ * Compact (16bit) move representation to preserve memory during search.
+ *
+ * The format is as follows (ffffttttttssssss)
+ *
+ * - Bits 0-5: [s]tart square index (6 bits = 64 possible squares to check for a
+ * move)
+ *
+ * - Bits 6-11: [t]arget square index(6 bits = 64 possible squares to check
+ * for a move)
+ *
+ * - Bits 12-15: [f]lag (promotion type, etc) [4 bits for flags]
+ *
+ */
 class Move {
   public:
     Move(uint16_t moveVal) { moveValue = moveVal; }

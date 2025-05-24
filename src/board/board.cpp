@@ -1,6 +1,6 @@
 
 #include "board/board.hpp"
-#include "moves/attack_squares.hpp"
+#include "moves/generation/attack_squares.hpp"
 #include <chrono>
 #include <string>
 
@@ -310,20 +310,9 @@ void Board::makeNullMove() {
 // TODO: Revisit one move generation is done
 bool Board::calculateInCheckState() const {
 
-    // Find the king
-    auto kingSquare = Square::None;
     const auto kingIndex = static_cast<int>(side) * 6 + static_cast<int>(PieceType::King);
-    const auto kingBB = currentState.piecesBitBoards[kingIndex];
-
-    // TODO: Use pop lsb here?
-    // Find the first (and only) bit set in the king bitboard
-    for (auto i = 0; i < 64; ++i) {
-        const Square sq(i);
-        if (kingBB.contains(sq)) {
-            kingSquare = sq;
-            break;
-        }
-    }
+    auto kingBB = currentState.piecesBitBoards[kingIndex];
+    Square kingSquare(kingBB.popLSB());
 
     if (kingSquare == Square::None) {
         // King not found, shouldn't happen in a valid position
@@ -354,11 +343,7 @@ bool Board::calculateInCheckState() const {
         }
     }
 
-    // Check for knight attacks
-    const Offset knightOffsets[] = {{-2, -1}, {-2, 1}, {-1, -2}, {-1, 2},
-                                    {1, -2},  {1, 2},  {2, -1},  {2, 1}};
-
-    for (const auto& offset : knightOffsets) {
+    for (const auto& offset : AttackTables::knightOffsets) {
         const auto knightCheckSquare = kingSquare.tryOffset(offset);
         if (knightCheckSquare != Square::None) {
             const auto piece = getPieceAt(knightCheckSquare);
@@ -409,10 +394,8 @@ bool Board::calculateInCheckState() const {
 
     // Check for king proximity (should not happen in a legal position, but checking for
     // completeness)
-    const Offset kingOffsets[] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1},
-                                  {0, 1},   {1, -1}, {1, 0},  {1, 1}};
 
-    for (const auto& offset : kingOffsets) {
+    for (const auto& offset : AttackTables::kingOffsets) {
         const auto kingCheckSquare = kingSquare.tryOffset(offset);
         if (kingCheckSquare != Square::None) {
             const auto piece = getPieceAt(kingCheckSquare);
@@ -629,7 +612,6 @@ uint64_t Board::perft(int depth, bool verbose) {
 }
 
 void Board::perftDivide(int depth) {
-    std::cout << depth << "==========\n";
     if (depth <= 0) {
         std::cout << "Depth must be greater than 0\n";
         return;

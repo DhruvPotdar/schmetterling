@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['concurrency_20handling_0',['Concurrency Handling',['../md_TODO.html#autotoc_md3',1,'']]]
+  ['castlingrights_0',['castlingRights',['../classBoard.html#a2c2a41f86fad54cc6ad63539840cf66f',1,'Board']]]
 ];

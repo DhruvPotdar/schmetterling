@@ -30,7 +30,7 @@ add_executable(schmetterling_exec
     thirdparty/backward.cpp
     src/board/board.cpp
     src/board/fen.cpp
-    src/moves/move_generation.cpp
+    src/moves/generation/move_generation.cpp
 )
 
 add_library(
@@ -38,7 +38,7 @@ add_library(
     src/main.cpp
     src/board/board.cpp
     src/board/fen.cpp
-    src/moves/move_generation.cpp
+    src/moves/generation/move_generation.cpp
 )
 
 
@@ -57,7 +57,7 @@ add_executable(perft
     src/perft.cpp
     src/board/board.cpp
     src/board/fen.cpp
-    src/moves/move_generation.cpp
+    src/moves/generation/move_generation.cpp
 )
 # Link GoogleTest and your library
 target_link_libraries(runUnitTests gtest_main schmetterling)

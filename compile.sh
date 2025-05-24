@@ -25,6 +25,6 @@ cd "$BUILD_DIR"
 
 # Run CMake and make
 echo "[INFO] Running CMake..."
-cmake -DCMAKE_BUILD_TYPE=Debug ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 echo "[INFO] Compiling with make..."
 cmake --build . -j"$(nproc)"

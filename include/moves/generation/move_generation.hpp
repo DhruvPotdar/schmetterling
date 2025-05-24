@@ -2,7 +2,7 @@
 
 #include "board/bitboard.hpp"
 #include "board/board.hpp"
-#include "moves.hpp"
+#include "moves/moves.hpp"
 #include <vector>
 
 /**
@@ -20,18 +20,18 @@ class MoveGenerator {
     bool isLegalMove(const Move move) const;
     const std::vector<Move> generatePseudoLegalMoves();
 
-    std::vector<Move> generatePawnMoves(Square square);
-    std::vector<Move> generateKnightMoves(Square square);
-    std::vector<Move> generateBishopMoves(Square square);
-    std::vector<Move> generateRookMoves(Square square);
-    std::vector<Move> generateQueenMoves(Square square);
-    std::vector<Move> generateKingMoves(Square square);
+    void generatePawnMoves(Square square, std::vector<Move>& moves);
+    void generateKnightMoves(Square square, std::vector<Move>& moves);
+    void generateBishopMoves(Square square, std::vector<Move>& moves);
+    void generateRookMoves(Square square, std::vector<Move>& moves);
+    void generateQueenMoves(Square square, std::vector<Move>& moves);
+    void generateKingMoves(Square square, std::vector<Move>& moves);
 
     bool isSquareAttacked(Square square, Side attackerSide) const;
     BitBoard getAttacksForPiece(Piece piece) const;
 
-    std::vector<Move> generateSlidingMoves(Square square, const Offset* directions,
-                                           int numDirections) const;
+    void generateSlidingMoves(Square square, const Offset* directions, int numDirections,
+                              std::vector<Move>& moves) const;
 
   private:
     const Board& _board;

@@ -1,6 +1,6 @@
-#include "moves/move_generation.hpp"
+#include "moves/generation/move_generation.hpp"
 #include "board/types.hpp"
-#include "moves/attack_squares.hpp"
+#include "moves/generation/attack_squares.hpp"
 #include "moves/moves.hpp"
 #include <vector>
 
@@ -26,22 +26,22 @@ const std::vector<Move> MoveGenerator::generateMoves() {
         std::vector<Move> moves;
         switch (piece.type) {
         case PieceType::Pawn:
-            moves = this->generatePawnMoves(sq);
+            this->generatePawnMoves(sq, moves);
             break;
         case PieceType::Knight:
-            moves = this->generateKnightMoves(sq);
+            this->generateKnightMoves(sq, moves);
             break;
         case PieceType::Bishop:
-            moves = this->generateBishopMoves(sq);
+            this->generateBishopMoves(sq, moves);
             break;
         case PieceType::Rook:
-            moves = this->generateRookMoves(sq);
+            this->generateRookMoves(sq, moves);
             break;
         case PieceType::Queen:
-            moves = this->generateQueenMoves(sq);
+            this->generateQueenMoves(sq, moves);
             break;
         case PieceType::King:
-            moves = this->generateKingMoves(sq);
+            this->generateKingMoves(sq, moves);
             break;
         default:
             break;
@@ -70,22 +70,22 @@ const std::vector<Move> MoveGenerator::generatePseudoLegalMoves() {
         std::vector<Move> pieceMoves;
         switch (piece.type) {
         case PieceType::Pawn:
-            pieceMoves = generatePawnMoves(from);
+            generatePawnMoves(from, pieceMoves);
             break;
         case PieceType::King:
-            pieceMoves = generateKingMoves(from);
+            generateKingMoves(from, pieceMoves);
             break;
         case PieceType::Queen:
-            pieceMoves = generateQueenMoves(from);
+            generateQueenMoves(from, pieceMoves);
             break;
         case PieceType::Knight:
-            pieceMoves = generateKnightMoves(from);
+            generateKnightMoves(from, pieceMoves);
             break;
         case PieceType::Bishop:
-            pieceMoves = generateBishopMoves(from);
+            generateBishopMoves(from, pieceMoves);
             break;
         case PieceType::Rook:
-            pieceMoves = generateRookMoves(from);
+            generateRookMoves(from, pieceMoves);
             break;
         default:
             break;
@@ -109,13 +109,14 @@ bool MoveGenerator::isLegalMove(const Move move) const {
     return !_tempBoard.isInCheck();
 }
 
-std::vector<Move> MoveGenerator::generatePawnMoves(Square square) {
-    std::vector<Move> moves;
+void MoveGenerator::generatePawnMoves(Square square, std::vector<Move>& moves) {
     auto piece = _board.getPieceAt(square);
 
     // std::cout << piece.getPieceSymbol() << "=====+++++++++++++++++++" << piece.side << "\n";
     if (piece.type != PieceType::Pawn || piece.side != _board.side) {
-        return moves;
+        std::cerr << "Wrong Piece";
+        return;
+        // return moves;
     }
 
     const auto direction = (_board.side == Side::White) ? 1 : -1;
@@ -178,13 +179,12 @@ std::vector<Move> MoveGenerator::generatePawnMoves(Square square) {
         }
     }
 
-    return moves;
+    // return moves;
 }
 
-std::vector<Move> MoveGenerator::generateKnightMoves(Square square) {
-    std::vector<Move> moves;
+void MoveGenerator::generateKnightMoves(Square square, std::vector<Move>& moves) {
     const auto piece = _board.getPieceAt(square);
-    if (piece.type != PieceType::Knight || piece.side != _board.side) return moves;
+    if (piece.type != PieceType::Knight || piece.side != _board.side) std::cerr << "Wrong Piece";
 
     const auto attacks = AttackTables::knightAttacks[square.getIndex()];
     const auto ownPieces = _board.currentState.colorBitBoards[_board.side];
@@ -193,13 +193,12 @@ std::vector<Move> MoveGenerator::generateKnightMoves(Square square) {
         const auto targetSquare = validTargets.popLSB();
         moves.emplace_back(Move(square.getIndex(), targetSquare.getIndex()));
     }
-    return moves;
+    // return moves;
 }
 
-std::vector<Move> MoveGenerator::generateKingMoves(Square square) {
-    std::vector<Move> moves;
+void MoveGenerator::generateKingMoves(Square square, std::vector<Move>& moves) {
     const auto piece = _board.getPieceAt(square);
-    if (piece.type != PieceType::King || piece.side != _board.side) return moves;
+    if (piece.type != PieceType::King || piece.side != _board.side) std::cerr << "Wrong Piece";
 
     // Normal moves
     const auto attacks = AttackTables::kingAttacks[square.getIndex()];
@@ -249,25 +248,23 @@ std::vector<Move> MoveGenerator::generateKingMoves(Square square) {
             }
         }
     }
-    return moves;
 }
-std::vector<Move> MoveGenerator::generateBishopMoves(Square square) {
-    return generateSlidingMoves(square, AttackTables::bishopOffsets, 4);
-}
-
-std::vector<Move> MoveGenerator::generateRookMoves(Square square) {
-    return generateSlidingMoves(square, AttackTables::rookOffsets, 4);
+void MoveGenerator::generateBishopMoves(Square square, std::vector<Move>& moves) {
+    generateSlidingMoves(square, AttackTables::bishopOffsets, 4, moves);
 }
 
-std::vector<Move> MoveGenerator::generateQueenMoves(Square square) {
-    return generateSlidingMoves(square, AttackTables::queenOffsets, 8);
+void MoveGenerator::generateRookMoves(Square square, std::vector<Move>& moves) {
+    return generateSlidingMoves(square, AttackTables::rookOffsets, 4, moves);
 }
 
-std::vector<Move> MoveGenerator::generateSlidingMoves(Square square, const Offset* directions,
-                                                      int numDirections) const {
-    std::vector<Move> moves;
+void MoveGenerator::generateQueenMoves(Square square, std::vector<Move>& moves) {
+    return generateSlidingMoves(square, AttackTables::queenOffsets, 8, moves);
+}
+
+void MoveGenerator::generateSlidingMoves(Square square, const Offset* directions, int numDirections,
+                                         std::vector<Move>& moves) const {
     const auto piece = _board.getPieceAt(square);
-    if (piece.type == PieceType::None || piece.side != _board.side) return moves;
+    if (piece.type == PieceType::None || piece.side != _board.side) std::cerr << "Wrong Piece";
 
     const auto occupancy = _board.currentState.colorBitBoards[Side::White] |
                            _board.currentState.colorBitBoards[Side::Black];
@@ -289,7 +286,6 @@ std::vector<Move> MoveGenerator::generateSlidingMoves(Square square, const Offse
         const auto targetSquare = validTargets.popLSB();
         moves.emplace_back(square.getIndex(), targetSquare.getIndex());
     }
-    return moves;
 }
 
 bool MoveGenerator::isSquareAttacked(Square square, Side attackerSide) const {

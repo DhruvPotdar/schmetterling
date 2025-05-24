@@ -40,15 +40,15 @@ class BitBoard {
         return *this;
     }
 
-    constexpr int LSBIndex() { return __builtin_ctzll(_bits); }
+    constexpr int LSBIndex() const { return __builtin_ctzll(_bits); }
 
     constexpr Square popLSB() {
-        if (_bits == 0) return -1; // No bits set
+        if (_bits == 0) return Square::None; // No bits set
         const auto index = __builtin_ctzll(_bits);
         _bits &= _bits - 1;
         return Square(index);
     }
-    constexpr int popCount() { return __builtin_popcountll(_bits); }
+    constexpr int popCount() const { return __builtin_popcountll(_bits); }
 
     // Set, clear, toggle a single square (if valid)
     constexpr void set(Square square) {

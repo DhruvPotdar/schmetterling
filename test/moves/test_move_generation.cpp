@@ -1,6 +1,6 @@
 #include "board/board.hpp"
 #include "board/squares.hpp"
-#include "moves/move_generation.hpp"
+#include "moves/generation/move_generation.hpp"
 #include <gtest/gtest.h>
 
 // Test fixture for MoveGenerator tests
@@ -20,7 +20,8 @@ class MoveGeneratorTest : public testing::Test {
 // Test pawn moves from E2 in the starting position
 TEST_F(MoveGeneratorTest, PawnMovesFromE2) {
     Square e2("e2");
-    auto moves = moveGen.generatePawnMoves(e2);
+    std::vector<Move> moves;
+    moveGen.generatePawnMoves(e2, moves);
     std::vector<std::string> moveStrings;
     for (const auto& move : moves) {
         Square from(move.startSquareIndex());
@@ -40,7 +41,8 @@ TEST_F(MoveGeneratorTest, PawnMovesFromE2) {
 // Test knight moves from G1 in the starting position
 TEST_F(MoveGeneratorTest, KnightMovesFromG1) {
     Square g1("g1");
-    auto moves = moveGen.generateKnightMoves(g1);
+    std::vector<Move> moves;
+    moveGen.generateKnightMoves(g1, moves);
     std::vector<std::string> moveStrings;
     for (const auto& move : moves) {
         Square from(move.startSquareIndex());
@@ -59,7 +61,8 @@ TEST_F(MoveGeneratorTest, KnightMovesFromG1) {
 // Test king moves from E1 in the starting position
 TEST_F(MoveGeneratorTest, KingMovesFromE1) {
     Square e1("E1");
-    auto moves = moveGen.generateKingMoves(e1);
+    std::vector<Move> moves;
+    moveGen.generateKingMoves(e1, moves);
     EXPECT_EQ(moves.size(), 0); // No moves in starting position (blocked and no castling yet)
 }
 
@@ -69,7 +72,9 @@ TEST_F(MoveGeneratorTest, PawnPromotion) {
     MoveGenerator moveGen(board);
 
     Square d7("d7");
-    auto moves = moveGen.generatePawnMoves(d7);
+
+    std::vector<Move> moves;
+    moveGen.generatePawnMoves(d7, moves);
     std::vector<std::string> moveStrings;
     for (const auto& move : moves) {
         Square from(move.startSquareIndex());
@@ -100,7 +105,8 @@ TEST_F(MoveGeneratorTest, EnPassantCaptures) {
         board = Board("rnbqkbnr/p1pppppp/8/3P4/1pP5/8/PP2PPPP/RNBQKBNR b KQkq c3 0 3");
         MoveGenerator moveGen(board);
         Square square("b4");
-        auto moves = moveGen.generatePawnMoves(square);
+        std::vector<Move> moves;
+        moveGen.generatePawnMoves(square, moves);
 
         std::vector<std::string> moveStrings;
         for (const auto& move : moves) {
@@ -125,7 +131,8 @@ TEST_F(MoveGeneratorTest, EnPassantCaptures) {
         board = Board("rnbqkbnr/p1pppppp/8/3P4/1pP5/8/PP2PPPP/RNBQKBNR b KQkq c3 0 3");
         MoveGenerator moveGen(board);
         Square d4("b4");
-        auto moves = moveGen.generatePawnMoves(d4);
+        std::vector<Move> moves;
+        moveGen.generatePawnMoves(d4, moves);
         // std::cout << Board::createDiagram(board);
         std::vector<std::string> moveStrings;
         for (const auto& move : moves) {
