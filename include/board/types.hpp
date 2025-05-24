@@ -75,28 +75,28 @@ struct Piece {
         }
     }
 
-    Piece(PieceType pieceType, Side pieceColor) {
+    Piece(const PieceType pieceType, const Side pieceColor) {
         if (pieceType <= PieceType::None && pieceColor <= 1) {
             side = pieceColor;
             type = pieceType;
         } else {
-            std::cout << "WARNING WRONG Piece Declared" << "\n";
+            throw std::invalid_argument("WARNING WRONG Piece Declared");
         }
     }
 
     Piece(int pieceIndex) {}
 
-    static bool isSide(Piece piece, Side color) { return (piece.side == color); }
+    static bool isSide(const Piece piece, const Side color) { return (piece.side == color); }
 
-    static bool isWhite(Piece piece) { return (piece.side == Side::White); }
+    static bool isWhite(const Piece piece) { return (piece.side == Side::White); }
 
     // Piece is bishop or queen
-    static bool isDiagonalSlider(Piece piece) {
+    static bool isDiagonalSlider(const Piece piece) {
         return (piece.type == PieceType::Bishop) || (piece.type == PieceType::Queen);
     }
 
     // Piece is Rook or Queen
-    static bool isOrthoSlider(Piece piece) {
+    static bool isOrthoSlider(const Piece piece) {
         return (piece.type == PieceType::Rook) || (piece.type == PieceType::Queen);
     }
 

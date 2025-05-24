@@ -37,3 +37,12 @@ TEST(SquareTest, Distance) {
     Square sq2(63);                     // H8
     EXPECT_EQ(sq1.distanceTo(sq2), 14); // Manhattan distance
 }
+
+TEST(SquareTest, InvalidConstruction) {
+    EXPECT_THROW(Square(-2), std::out_of_range); // Below minimum
+    EXPECT_THROW(Square(64), std::out_of_range); // Above maximum
+    EXPECT_NO_THROW(Square(-1));                 // Explicit None case
+
+    EXPECT_THROW(Square("I9"), std::invalid_argument); // Invalid file
+    EXPECT_THROW(Square("A0"), std::invalid_argument); // Invalid rank
+}

@@ -1,9 +1,7 @@
 
 #include "board/board.hpp"
-#include "board/squares.hpp"
-#include "board/types.hpp"
-#include <iostream>
-#include <sstream>
+#include "moves/attack_squares.hpp"
+#include <chrono>
 #include <string>
 
 // Define static member
@@ -207,7 +205,7 @@ Board::UndoInfo Board::makeMove(const Square from, const Square to) {
     return undoInfo;
 }
 
-void Board::unMakeMove(Square from, Square to, const UndoInfo& undoInfo) {
+void Board::unMakeMove(const Square from, const Square to, const UndoInfo& undoInfo) {
     // Move the piece back
     movePiece(undoInfo.movedPiece, to.getIndex(), from.getIndex());
 
@@ -435,7 +433,6 @@ bool Board::isInCheck() {
 }
 
 // Implementation of Board diagram creation
-
 const std::string Board::createDiagram(const Board& board, const bool blackAtTop,
                                        bool const includeFen) {
     std::ostringstream ss;
@@ -526,4 +523,133 @@ const std::string Board::createDiagram(const Board& board, const bool blackAtTop
 
     ss << "=============================================\n";
     return ss.str();
+}
+
+std::vector<Move> Board::generateLegalMoves() {
+    MoveGenerator moveGenerator(*this);
+    return moveGenerator.generateMoves();
+}
+
+Square Board::findKingSquare(Side side) const {
+    int kingIndex = static_cast<int>(side) * 6 + static_cast<int>(PieceType::King);
+    BitBoard kingBB = currentState.piecesBitBoards[kingIndex];
+    if (kingBB != 0) {
+        return Square(kingBB.LSBIndex());
+    }
+    return Square::None;
+}
+
+bool Board::isSquareAttacked(Square square, Side attackerSide) const {
+    auto pawnAttacks = (attackerSide == Side::White)
+                           ? AttackTables::blackPawnAttacks[square.getIndex()]
+                           : AttackTables::whitePawnAttacks[square.getIndex()];
+    if (pawnAttacks &
+        currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Pawn)]) {
+        return true;
+    }
+    BitBoard knightAttacks = AttackTables::knightAttacks[square.getIndex()];
+    if (knightAttacks &
+        currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Knight)]) {
+        return true;
+    }
+    BitBoard kingAttacks = AttackTables::kingAttacks[square.getIndex()];
+    if (kingAttacks &
+        currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::King)]) {
+        return true;
+    }
+    BitBoard occupancy =
+        currentState.colorBitBoards[Side::White] | currentState.colorBitBoards[Side::Black];
+    for (const auto& dir : AttackTables::bishopOffsets) {
+        auto current = square;
+        while (true) {
+            current = current.tryOffset(dir);
+            if (current == Square::None) break;
+            const auto piece = getPieceAt(current);
+            if (piece.type != PieceType::None) {
+                if (piece.side == attackerSide && Piece::isDiagonalSlider(piece)) return true;
+                break;
+            }
+        }
+    }
+    for (const auto& dir : AttackTables::rookOffsets) {
+        auto current = square;
+        while (true) {
+            current = current.tryOffset(dir);
+            if (current == Square::None) break;
+            const auto piece = getPieceAt(current);
+            if (piece.type != PieceType::None) {
+                if (piece.side == attackerSide && Piece::isOrthoSlider(piece)) return true;
+                break;
+            }
+        }
+    }
+    return false;
+}
+
+uint64_t Board::perft(int depth, bool verbose) {
+    if (depth == 0) return 1;
+
+    std::chrono::high_resolution_clock::time_point start;
+    if (verbose) {
+        start = std::chrono::high_resolution_clock::now();
+    }
+
+    MoveGenerator moveGen(*this);
+    auto moves = moveGen.generatePseudoLegalMoves();
+
+    uint64_t nodes = 0;
+    Side movingSide = side;
+
+    for (const auto& move : moves) {
+        auto undoInfo = makeMove(move.from(), move.to());
+        Square kingSquare = findKingSquare(movingSide);
+        if (!isSquareAttacked(kingSquare, side)) {
+            nodes += perft(depth - 1);
+        }
+        unMakeMove(move.from(), move.to(), undoInfo);
+    }
+
+    if (verbose) {
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> duration = end - start;
+        double seconds = duration.count();
+        double nodesPerSecond = (seconds > 0) ? nodes / seconds : nodes;
+
+        std::cout << "\n=== Perft Results for Depth " << depth << " ===\n";
+        std::cout << "Total Nodes: " << nodes << "\n";
+        std::cout << "Time Taken: " << std::fixed << std::setprecision(3) << seconds
+                  << " seconds\n";
+        std::cout << "Nodes per Second: " << std::fixed << std::setprecision(0) << nodesPerSecond
+                  << " nps"
+                  << "\n";
+        std::cout << "================================\n";
+    }
+
+    return nodes;
+}
+
+void Board::perftDivide(int depth) {
+    std::cout << depth << "==========\n";
+    if (depth <= 0) {
+        std::cout << "Depth must be greater than 0\n";
+        return;
+    }
+
+    MoveGenerator moveGen(*this);
+    auto moves = moveGen.generatePseudoLegalMoves();
+    uint64_t totalNodes = 0;
+    Side movingSide = side;
+
+    std::cout << "\n=== Perft Divide at Depth " << depth << " ===\n";
+    for (const auto& move : moves) {
+        auto undoInfo = makeMove(move.from(), move.to());
+        if (!isSquareAttacked(findKingSquare(movingSide), side)) {
+            uint64_t nodes = perft(depth - 1);
+            totalNodes += nodes;
+            std::cout << static_cast<std::string>(move) << ": " << nodes << "\n";
+        }
+        unMakeMove(move.from(), move.to(), undoInfo);
+    }
+    std::cout << "Total Moves: " << moves.size() << "\n";
+    std::cout << "Total Nodes: " << totalNodes << "\n";
 }

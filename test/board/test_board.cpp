@@ -89,3 +89,4 @@ TEST(BoardTest, EnPassantCapture) {
 //     EXPECT_EQ(board.getPieceAt("A7").type, PieceType::Pawn);
 //     EXPECT_EQ(board.getPieceAt("A8").type, PieceType::None);
 // }
+//

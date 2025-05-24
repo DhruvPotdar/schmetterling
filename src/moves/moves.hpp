@@ -1,6 +1,7 @@
+
 #pragma once
-#include "../board/types.hpp"
-#include "board/squares.hpp"
+
+#include "board/types.hpp"
 #include <cstdint>
 
 enum class MoveFlag {
@@ -41,33 +42,6 @@ class Move {
     // Checks if the move is considered "null" (value is 0)
     constexpr bool isNull() const { return moveValue == 0; }
 
-    Square to() const { return Square(targetSquareIndex()); }
-    Square from() const { return Square(startSquareIndex()); }
-
-    operator std::string() const {
-        std::string str = this->from().getAlgebraic() + this->to().getAlgebraic();
-        if (this->isPromotion()) {
-            char promoChar;
-            switch (this->getPromotionPieceType()) {
-            case PieceType::Queen:
-                promoChar = 'q';
-                break;
-            case PieceType::Rook:
-                promoChar = 'r';
-                break;
-            case PieceType::Bishop:
-                promoChar = 'b';
-                break;
-            case PieceType::Knight:
-                promoChar = 'n';
-                break;
-            default:
-                promoChar = ' ';
-            }
-            str += promoChar;
-        }
-        return str;
-    }
     // Extracts the starting square index
     int startSquareIndex() const { return moveValue & startSquareMask; }
 

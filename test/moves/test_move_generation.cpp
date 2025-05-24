@@ -96,7 +96,6 @@ TEST_F(MoveGeneratorTest, PawnPromotion) {
 // Test en passant (custom position)
 
 TEST_F(MoveGeneratorTest, EnPassantCaptures) {
-    // Test White en passant
     {
         board = Board("rnbqkbnr/p1pppppp/8/3P4/1pP5/8/PP2PPPP/RNBQKBNR b KQkq c3 0 3");
         MoveGenerator moveGen(board);
@@ -122,19 +121,17 @@ TEST_F(MoveGeneratorTest, EnPassantCaptures) {
         }
     }
 
-    // Test Black en passant
     {
         board = Board("rnbqkbnr/p1pppppp/8/3P4/1pP5/8/PP2PPPP/RNBQKBNR b KQkq c3 0 3");
         MoveGenerator moveGen(board);
         Square d4("b4");
         auto moves = moveGen.generatePawnMoves(d4);
-        std::cout << Board::createDiagram(board);
+        // std::cout << Board::createDiagram(board);
         std::vector<std::string> moveStrings;
         for (const auto& move : moves) {
             Square from(move.startSquareIndex());
             Square to(move.targetSquareIndex());
-            std::string moveStr = from.getAlgebraic() + to.getAlgebraic();
-            std::cout << moveStr << "Move String\n";
+            const auto moveStr = from.getAlgebraic() + to.getAlgebraic();
             moveStrings.push_back(moveStr);
         }
 
@@ -145,5 +142,62 @@ TEST_F(MoveGeneratorTest, EnPassantCaptures) {
             EXPECT_TRUE(std::find(moveStrings.begin(), moveStrings.end(), move) !=
                         moveStrings.end());
         }
+    }
+}
+
+TEST_F(MoveGeneratorTest, GenerateMoves_InitialPosition) {
+    Board board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    MoveGenerator moveGen(board);
+
+    auto moves = moveGen.generateMoves();
+
+    // In the start position, White has 20 possible moves
+    // (16 pawn moves + 4 knight moves)
+    EXPECT_EQ(moves.size(), 20);
+
+    // Check that all moves are for White pieces and are within board bounds
+    for (const auto& move : moves) {
+        Square from = move.from();
+        Square to = move.to();
+        Piece piece = board.getPieceAt(from);
+
+        // All moves must be for White
+        EXPECT_EQ(piece.side, Side::White);
+
+        // All destination squares must be valid
+        EXPECT_GE(to.getIndex(), 0);
+        EXPECT_LT(to.getIndex(), 64);
+    }
+}
+
+TEST_F(MoveGeneratorTest, GenerateMoves_EmptyBoard) {
+    // Set up an empty board
+    Board board("8/8/8/8/8/8/8/8 w - - 0 1");
+    MoveGenerator moveGen(board);
+
+    // Generate all moves
+    auto moves = moveGen.generateMoves();
+
+    // There should be no moves
+    EXPECT_TRUE(moves.empty());
+}
+
+TEST_F(MoveGeneratorTest, GenerateMoves_KingOnly) {
+    // Only a white king on e1
+    Board board("8/8/8/8/8/8/8/4K3 w - - 0 1");
+    MoveGenerator moveGen(board);
+
+    //  Generate all moves
+    auto moves = moveGen.generateMoves();
+
+    // King in the corner should have 5 possible moves
+    EXPECT_EQ(moves.size(), 5);
+
+    // Check that all moves are for White king
+    for (const auto& move : moves) {
+        Square from = move.from();
+        Piece piece = board.getPieceAt(from);
+        EXPECT_EQ(piece.type, PieceType::King);
+        EXPECT_EQ(piece.side, Side::White);
     }
 }

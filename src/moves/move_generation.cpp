@@ -1,7 +1,59 @@
 #include "moves/move_generation.hpp"
 #include "board/types.hpp"
 #include "moves/attack_squares.hpp"
+#include "moves/moves.hpp"
 #include <vector>
+
+#include <algorithm> // for std::for_each
+#include <numeric>   // for std::iota
+#include <vector>
+
+const std::vector<Move> MoveGenerator::generateMoves() {
+    std::vector<Move> allMoves;
+    allMoves.reserve(20); // Reserve space
+
+    // Prepare a vector of all square indices [0, 63]
+    std::vector<int> indices(64);
+    std::iota(indices.begin(), indices.end(), 0);
+
+    // Lambda to process each square
+    auto processSquare = [&](int idx) {
+        Square sq(idx);
+        const auto piece = _board.getPieceAt(sq);
+        if (piece.type == PieceType::None || piece.side != _board.side)
+            return; // Skip empty or opponent's square
+
+        std::vector<Move> moves;
+        switch (piece.type) {
+        case PieceType::Pawn:
+            moves = this->generatePawnMoves(sq);
+            break;
+        case PieceType::Knight:
+            moves = this->generateKnightMoves(sq);
+            break;
+        case PieceType::Bishop:
+            moves = this->generateBishopMoves(sq);
+            break;
+        case PieceType::Rook:
+            moves = this->generateRookMoves(sq);
+            break;
+        case PieceType::Queen:
+            moves = this->generateQueenMoves(sq);
+            break;
+        case PieceType::King:
+            moves = this->generateKingMoves(sq);
+            break;
+        default:
+            break;
+        }
+        allMoves.insert(allMoves.end(), moves.begin(), moves.end());
+    };
+
+    // Use std::for_each to process all squares
+    std::for_each(indices.begin(), indices.end(), processSquare);
+
+    return allMoves;
+}
 
 /**
  * @brief Generates Pseudo legal moves for all pieces on the current side
@@ -61,11 +113,8 @@ std::vector<Move> MoveGenerator::generatePawnMoves(Square square) {
     std::vector<Move> moves;
     auto piece = _board.getPieceAt(square);
 
-    std::cout << piece.getPieceSymbol() << "=====+++++++++++++++++++" << piece.side << "\n";
+    // std::cout << piece.getPieceSymbol() << "=====+++++++++++++++++++" << piece.side << "\n";
     if (piece.type != PieceType::Pawn || piece.side != _board.side) {
-
-        std::cout << Board::createDiagram(_board);
-        // std::cout << piece.pieceIndex() << "++++++++";
         return moves;
     }
 

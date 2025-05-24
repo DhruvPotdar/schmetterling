@@ -48,6 +48,7 @@ class BitBoard {
         _bits &= _bits - 1;
         return Square(index);
     }
+    constexpr int popCount() { return __builtin_popcountll(_bits); }
 
     // Set, clear, toggle a single square (if valid)
     constexpr void set(Square square) {

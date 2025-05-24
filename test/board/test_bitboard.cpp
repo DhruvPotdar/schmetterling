@@ -42,3 +42,22 @@ TEST(BitBoardTest, OfSquare) {
     BitBoard bb = BitBoard::of(sq);
     EXPECT_EQ(static_cast<uint64_t>(bb), 1ULL);
 }
+
+TEST(BitBoardTest, FullBoardOperations) {
+    BitBoard fullBoard(~0ULL); // All squares occupied
+    EXPECT_EQ(fullBoard.popCount(), 64);
+    EXPECT_TRUE(fullBoard.contains(Square("H8")));
+
+    fullBoard.toggle(Square("E4"));
+    EXPECT_EQ(fullBoard.popCount(), 63); // Verify single bit clear
+}
+
+TEST(BitBoardTest, BoundaryShifts) {
+    BitBoard northEdge(0xFF00000000000000); // 8th rank
+    BitBoard shifted = northEdge.shift(8);  // Attempt to shift off board
+    EXPECT_EQ(shifted, 0ULL);               // Should vanish
+
+    BitBoard southEdge(0xFF); // 1st rank
+    BitBoard southShifted = southEdge.shift(-8);
+    EXPECT_EQ(southShifted, 0ULL);
+}

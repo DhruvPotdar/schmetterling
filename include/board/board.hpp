@@ -8,14 +8,13 @@
 #include "../moves/moves.hpp"
 #include "bitboard.hpp"
 #include "fen.hpp"
+#include "moves/move_generation.hpp"
 
 #include <array>
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
-
-class FEN;
 
 struct BoardState {
     std::array<BitBoard, 12> piecesBitBoards; // Indexed as Side * 6 + ((int) PieceType -1)
@@ -96,13 +95,12 @@ class Board {
     std::string toFEN() const { return FEN::generate(*this); }
 
     constexpr operator std::string() { return Board::createDiagram(*this); }
-    Piece getPieceAt(Square s) const;
-    Piece getPieceAt(std::string squareName) const;
+    Piece getPieceAt(const Square s) const;
+    Piece getPieceAt(const std::string squareName) const;
 
-    UndoInfo makeMove(Square from, Square to);
-    UndoInfo tryMove(Square from, Square to);
-    void unMakeMove(Square from, Square to, const UndoInfo& undoInfo);
-    void movePiece(Piece movedPiece, int startSquareIndex, int targetSquareIndex);
+    UndoInfo makeMove(const Square from, const Square to);
+    void unMakeMove(const Square from, const Square to, const UndoInfo& undoInfo);
+    void movePiece(const Piece movedPiece, const int startSquareIndex, const int targetSquareIndex);
     void makeNullMove();
     void unmakeNullMove(const UndoInfo& undoInfo);
     /**
@@ -119,4 +117,12 @@ class Board {
                                            bool const includeFen = true);
 
     Board& operator=(const Board&) = default;
+
+    std::vector<Move> generateLegalMoves();
+
+    Square findKingSquare(Side side) const;
+    bool isSquareAttacked(Square square, Side attackerSide) const;
+
+    uint64_t perft(int depth, bool verbose = false);
+    void perftDivide(int depth);
 };

@@ -1,6 +1,6 @@
 
 #include "board/board.hpp"
-#include <iostream>
+#include <string>
 int main() {
     // Initialize board with standard chess position
     std::string initialFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";

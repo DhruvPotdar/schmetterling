@@ -49,10 +49,16 @@ add_executable(runUnitTests
     test/board/test_bitboard.cpp
     test/board/test_fen.cpp
     test/board/test_board.cpp
-
     test/moves/test_move_generation.cpp
 )
 
+# Add perft executable
+add_executable(perft
+    src/perft.cpp
+    src/board/board.cpp
+    src/board/fen.cpp
+    src/moves/move_generation.cpp
+)
 # Link GoogleTest and your library
 target_link_libraries(runUnitTests gtest_main schmetterling)
 
