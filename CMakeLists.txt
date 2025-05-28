@@ -15,7 +15,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(FetchContent)
 FetchContent_Declare(
   googletest
-  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG main  # Use a specific release tag (e.g., v1.14.0) for stability
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -31,6 +32,7 @@ add_executable(schmetterling_exec
     src/board/board.cpp
     src/board/fen.cpp
     src/moves/generation/move_generation.cpp
+    src/evaluation/evaluation.cpp
 )
 
 add_library(
@@ -39,8 +41,17 @@ add_library(
     src/board/board.cpp
     src/board/fen.cpp
     src/moves/generation/move_generation.cpp
+    src/evaluation/evaluation.cpp
 )
 
+# Add perft executable
+add_executable(perft
+    src/perft.cpp
+    src/board/board.cpp
+    src/board/fen.cpp
+    src/moves/generation/move_generation.cpp
+    src/evaluation/evaluation.cpp
+)
 
 # Add test executable
 add_executable(runUnitTests
@@ -50,14 +61,7 @@ add_executable(runUnitTests
     test/board/test_fen.cpp
     test/board/test_board.cpp
     test/moves/test_move_generation.cpp
-)
-
-# Add perft executable
-add_executable(perft
-    src/perft.cpp
-    src/board/board.cpp
-    src/board/fen.cpp
-    src/moves/generation/move_generation.cpp
+    test/evaluation/test_evaluation.cpp
 )
 # Link GoogleTest and your library
 target_link_libraries(runUnitTests gtest_main schmetterling)

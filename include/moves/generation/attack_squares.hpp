@@ -23,13 +23,13 @@ static constexpr Offset queenOffsets[] = {Offset(-1, -1), Offset(-1, 1), Offset(
 // Helper function to compute attack bitboard at compile-time
 constexpr BitBoard computeKnightAttacks(int squareIndex) {
     uint64_t attacks = 0;
-    int file = squareIndex % 8;
-    int rank = squareIndex / 8;
+    const auto file = squareIndex % 8;
+    const auto rank = squareIndex / 8;
     for (const auto& offset : knightOffsets) {
-        int newFile = file + offset.file;
-        int newRank = rank + offset.rank;
+        const auto newFile = file + offset.file;
+        const auto newRank = rank + offset.rank;
         if (newFile >= 0 && newFile < 8 && newRank >= 0 && newRank < 8) {
-            int targetIndex = newFile + newRank * 8;
+            const auto targetIndex = newFile + newRank * 8;
             attacks |= (1ULL << targetIndex);
         }
     }
@@ -38,7 +38,7 @@ constexpr BitBoard computeKnightAttacks(int squareIndex) {
 
 static constexpr std::array<BitBoard, 64> knightAttacks = []() {
     std::array<BitBoard, 64> attacks{};
-    for (int i = 0; i < 64; ++i) {
+    for (auto i = 0; i < 64; ++i) {
         attacks[i] = computeKnightAttacks(i);
     }
     return attacks;
@@ -46,13 +46,13 @@ static constexpr std::array<BitBoard, 64> knightAttacks = []() {
 
 constexpr BitBoard computeKingAttacks(int squareIndex) {
     uint64_t attacks = 0;
-    int file = squareIndex % 8;
-    int rank = squareIndex / 8;
+    const auto file = squareIndex % 8;
+    const auto rank = squareIndex / 8;
     for (const auto& offset : kingOffsets) {
-        int newFile = file + offset.file;
-        int newRank = rank + offset.rank;
+        const auto newFile = file + offset.file;
+        const auto newRank = rank + offset.rank;
         if (newFile >= 0 && newFile < 8 && newRank >= 0 && newRank < 8) {
-            int targetIndex = newFile + newRank * 8;
+            const auto targetIndex = newFile + newRank * 8;
             attacks |= (1ULL << targetIndex);
         }
     }
@@ -61,7 +61,7 @@ constexpr BitBoard computeKingAttacks(int squareIndex) {
 
 static constexpr std::array<BitBoard, 64> kingAttacks = []() {
     std::array<BitBoard, 64> attacks{};
-    for (int i = 0; i < 64; ++i) {
+    for (auto i = 0; i < 64; ++i) {
         attacks[i] = computeKingAttacks(i);
     }
     return attacks;
@@ -69,8 +69,8 @@ static constexpr std::array<BitBoard, 64> kingAttacks = []() {
 
 constexpr BitBoard computeWhitePawnAttacks(int squareIndex) {
     uint64_t attacks = 0;
-    int file = squareIndex % 8;
-    int rank = squareIndex / 8;
+    const auto file = squareIndex % 8;
+    const auto rank = squareIndex / 8;
     // Up-left: file - 1, rank + 1
     if (file > 0 && rank < 7) {
         attacks |= (1ULL << (squareIndex + 7));
@@ -92,8 +92,8 @@ static constexpr std::array<BitBoard, 64> whitePawnAttacks = []() {
 
 constexpr BitBoard computeBlackPawnAttacks(int squareIndex) {
     uint64_t attacks = 0;
-    int file = squareIndex % 8;
-    int rank = squareIndex / 8;
+    const auto file = squareIndex % 8;
+    const auto rank = squareIndex / 8;
     // Down-left: file - 1, rank - 1
     if (file > 0 && rank > 0) {
         attacks |= (1ULL << (squareIndex - 9));
@@ -107,7 +107,7 @@ constexpr BitBoard computeBlackPawnAttacks(int squareIndex) {
 
 static constexpr std::array<BitBoard, 64> blackPawnAttacks = []() {
     std::array<BitBoard, 64> attacks{};
-    for (int i = 0; i < 64; ++i) {
+    for (auto i = 0; i < 64; ++i) {
         attacks[i] = computeBlackPawnAttacks(i);
     }
     return attacks;

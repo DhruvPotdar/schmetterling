@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+// BitBoard bishops = currentState.piecesBitBoards[base + static_cast<int>(PieceType::Bishop)];
 struct BoardState {
     std::array<BitBoard, 12> piecesBitBoards; // Indexed as Side * 6 + ((int) PieceType -1)
     std::array<BitBoard, 2> colorBitBoards;   // One for each color

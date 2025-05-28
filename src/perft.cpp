@@ -1,5 +1,3 @@
-
-
 #include "board/board.hpp"
 #include <iostream>
 
@@ -14,7 +12,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    int depth = std::atoi(argv[1]);
+    const auto depth = std::atoi(argv[1]);
     if (depth <= 0) {
         std::cerr << "Error: Depth must be a positive integer\n";
         return 1;
@@ -34,6 +32,7 @@ int main(int argc, char* argv[]) {
     try {
         Board board(fen);
         std::cout << "Running perft test for FEN: " << fen << " at depth " << depth << "\n";
+        std::cout << Board::createDiagram(board);
         board.perft(depth, true); // Run perft with verbose output
         board.perftDivide(depth); // Run perftDivide
     } catch (const std::exception& e) {

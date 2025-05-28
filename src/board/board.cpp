@@ -13,7 +13,6 @@ void Board::movePiece(const Piece movedPiece, const int start, const int target)
     const Square to(target);
 
     // Clear the piece from the starting square
-
     currentState.piecesBitBoards[movedPiece.pieceIndex()].clear(from);
     currentState.colorBitBoards[movedPiece.side].clear(from);
 
@@ -523,49 +522,63 @@ Square Board::findKingSquare(Side side) const {
 }
 
 bool Board::isSquareAttacked(Square square, Side attackerSide) const {
-    auto pawnAttacks = (attackerSide == Side::White)
-                           ? AttackTables::blackPawnAttacks[square.getIndex()]
-                           : AttackTables::whitePawnAttacks[square.getIndex()];
-    if (pawnAttacks &
-        currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Pawn)]) {
-        return true;
-    }
-    BitBoard knightAttacks = AttackTables::knightAttacks[square.getIndex()];
-    if (knightAttacks &
-        currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Knight)]) {
-        return true;
-    }
-    BitBoard kingAttacks = AttackTables::kingAttacks[square.getIndex()];
-    if (kingAttacks &
-        currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::King)]) {
-        return true;
-    }
+    int sq = square.getIndex();
+
+    // Get all occupancy
     BitBoard occupancy =
         currentState.colorBitBoards[Side::White] | currentState.colorBitBoards[Side::Black];
+
+    // Pawn attacks (note: from attacker's point of view)
+    const auto& pawnAttacks = (attackerSide == Side::White) ? AttackTables::whitePawnAttacks[sq]
+                                                            : AttackTables::blackPawnAttacks[sq];
+    if (pawnAttacks &
+        currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Pawn)])
+        return true;
+
+    // Knight attacks
+    if (AttackTables::knightAttacks[sq] &
+        currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Knight)])
+        return true;
+
+    // King attacks
+    if (AttackTables::kingAttacks[sq] &
+        currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::King)])
+        return true;
+
+    // Sliding piece attacks (brute force until you implement sliding attack tables)
     for (const auto& dir : AttackTables::bishopOffsets) {
         auto current = square;
         while (true) {
             current = current.tryOffset(dir);
             if (current == Square::None) break;
+
             const auto piece = getPieceAt(current);
             if (piece.type != PieceType::None) {
-                if (piece.side == attackerSide && Piece::isDiagonalSlider(piece)) return true;
+                if (piece.side == attackerSide &&
+                    (piece.type == PieceType::Bishop || piece.type == PieceType::Queen))
+                    return true;
                 break;
             }
         }
     }
+
     for (const auto& dir : AttackTables::rookOffsets) {
         auto current = square;
         while (true) {
             current = current.tryOffset(dir);
             if (current == Square::None) break;
+
             const auto piece = getPieceAt(current);
             if (piece.type != PieceType::None) {
-                if (piece.side == attackerSide && Piece::isOrthoSlider(piece)) return true;
+                if (piece.side == attackerSide &&
+                    (piece.type == PieceType::Rook || piece.type == PieceType::Queen))
+                    return true;
+
                 break;
             }
         }
     }
+
     return false;
 }
 

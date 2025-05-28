@@ -1,5 +1,16 @@
-#
+# TODO
 - [x] Board + Bitboard logic
+- [x] Move generation logic
+    - [x] perft
+- [ ] Evaluation
+     - Mobility: Use MoveGenerator to count legal moves or attacked squares
+     - Rook on open files: Check files with no pawns
+     - Outposts: Knights on squares not attacked by enemy pawns
+     - Advanced king safety: Evaluate attacks on king zone
+     - Game phase: Blend middlegame and endgame evaluations
+- [ ] Search
+
+### Some high level details I got from chatgpt
 
 #### Design Patterns
 - **Dependency Injection**: Pass dependencies (e.g., `Evaluation` to `Search`) via templates or constructor parameters to decouple components and ease testing.
