@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['castlingrights_0',['castlingRights',['../classBoard.html#a2c2a41f86fad54cc6ad63539840cf66f',1,'Board']]]
+  ['attack_5fsquares_2ehpp_0',['attack_squares.hpp',['../df/de6/attack__squares_8hpp.html',1,'']]],
+  ['attacktables_1',['AttackTables',['../db/ddd/namespaceAttackTables.html',1,'']]]
 ];

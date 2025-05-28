@@ -65,7 +65,7 @@ Stay tuned for updates!
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/schmetterling.git
+   git clone https://github.com/DhruvPotdar/schmetterling.git
    cd schmetterling
    ```
 2. Build the project using `just` (see below).
@@ -78,9 +78,6 @@ Stay tuned for updates!
   ```bash
   cargo install just
   ```
-- **Package Manager**:
-  - macOS: `brew install just`
-  - Linux: Check your distro’s package manager or build from source.
 
 Verify installation:
 ```bash
@@ -91,7 +88,7 @@ just --version
 The `justfile` defines these tasks:
 - **`just build`**: Compiles the project in Release mode.
 - **`just run`**: Builds and runs the main executable.
-- **`just perft [depth]`**: Runs perft with a specified depth (default: 5).
+- **`just perft [depth] [fen]`**: Runs perft with a specified depth (default: 5) and a start position(fen string).
 - **`just clean`**: Removes build artifacts.
 
 ### Examples
