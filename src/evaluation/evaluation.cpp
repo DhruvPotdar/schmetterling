@@ -209,6 +209,7 @@ int evaluatePieceSquareTables(const Board& board) {
     }
     return score;
 }
+
 /**
  * @brief Evaluates the board position based on material, piece-square tables, pawn structure, and
  * king safety.
@@ -253,6 +254,49 @@ int Evaluation::evaluate(const Board& board) {
 
     // King safety
     score += computeKingSafetyScore(board);
+
+    return score;
+}
+
+int Evaluation::evaluateComponents(const Board& board, bool includeMaterial,
+                                   bool includePieceSquares, bool includePawnStructure,
+                                   bool includeKingSafety) {
+    auto score = 0;
+
+    if (includeMaterial) {
+        // Material evaluation with bishop pair bonus
+        for (auto pieceIndex = 0; pieceIndex < 12; ++pieceIndex) {
+            const auto side = static_cast<Side>(pieceIndex / 6);
+            const auto type = static_cast<PieceType>(pieceIndex % 6);
+
+            if (type == PieceType::King) continue;
+
+            const auto pieceBitBoard = board.currentState.piecesBitBoards[pieceIndex];
+            const auto pieceCount = pieceBitBoard.popCount();
+            const auto material = materialValues[static_cast<int>(type)];
+
+            score += (side == Side::White) ? pieceCount * material : -pieceCount * material;
+        }
+
+        // Bishop pair bonus
+        const auto whiteBishopCount = board.currentState.piecesBitBoards[2].popCount();
+        const auto blackBishopCount = board.currentState.piecesBitBoards[8].popCount();
+
+        if (whiteBishopCount >= 2) score += bishopPairBonus;
+        if (blackBishopCount >= 2) score -= bishopPairBonus;
+    }
+
+    if (includePieceSquares) {
+        score += evaluatePieceSquareTables(board);
+    }
+
+    if (includePawnStructure) {
+        score += computePawnStructureScore(board);
+    }
+
+    if (includeKingSafety) {
+        score += computeKingSafetyScore(board);
+    }
 
     return score;
 }

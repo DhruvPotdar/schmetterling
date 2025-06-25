@@ -25,6 +25,8 @@
 var NAVTREE =
 [
   [ "Schmetterling", "index.html", [
+    [ "Schmetterling Chess Engine", "index.html", "index" ],
+    [ "TODO", "dd/de8/md__2home_2radtop_2work_2schmetterling_2TODO.html", null ],
     [ "Namespaces", "namespaces.html", [
       [ "Namespace List", "namespaces.html", "namespaces_dup" ],
       [ "Namespace Members", "namespacemembers.html", [
@@ -58,7 +60,7 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"dd/d23/classMoveGeneratorTest.html#aa7365f84eb424fc3639ce23e08de46a8"
+"dd/d23/classMoveGeneratorTest.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronization';

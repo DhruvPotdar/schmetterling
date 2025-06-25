@@ -19,6 +19,7 @@ default:
 clean:
     @echo "[INFO] Removing build directory..."
     rm -rf {{BUILD_DIR}}
+    rm -rf docs/
     @echo "[INFO] Clean successful!"
 
 # Build the project (Release or Debug)

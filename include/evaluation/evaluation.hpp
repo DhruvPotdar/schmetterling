@@ -19,6 +19,19 @@ class Evaluation {
      */
     static int evaluate(const Board& board);
 
+    /**
+     * @brief Add this method for testing specific components
+     * @param board
+     * @param includeMaterial
+     * @param includePieceSquares
+     * @param includePawnStructure
+     * @param includeKingSafety
+     * @return
+     */
+    static int evaluateComponents(const Board& board, bool includeMaterial = true,
+                                  bool includePieceSquares = true, bool includePawnStructure = true,
+                                  bool includeKingSafety = true);
+
   private:
     // Material values in centipawns (100 = 1 pawn) indexed by piecetype
     static constexpr std::array<int, 6> materialValues = {
