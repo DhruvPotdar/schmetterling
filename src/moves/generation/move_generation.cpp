@@ -4,55 +4,25 @@
 #include "moves/moves.hpp"
 #include <vector>
 
-#include <algorithm> // for std::for_each
-#include <numeric>   // for std::iota
+#include <numeric>
 #include <vector>
 
 const std::vector<Move> MoveGenerator::generateMoves() {
-    std::vector<Move> allMoves;
-    allMoves.reserve(20); // Reserve space
+    _legalMoves.clear();
 
-    // Prepare a vector of all square indices [0, 63]
-    std::vector<int> indices(64);
-    std::iota(indices.begin(), indices.end(), 0);
+    // Generate all pseudo-legal moves first
+    auto pseudoLegalMoves = generatePseudoLegalMoves();
 
-    // Lambda to process each square
-    auto processSquare = [&](int idx) {
-        Square sq(idx);
-        const auto piece = _board.getPieceAt(sq);
-        if (piece.type == PieceType::None || piece.side != _board.side)
-            return; // Skip empty or opponent's square
+    // Filter out moves that leave king in check
+    _legalMoves.reserve(pseudoLegalMoves.size()); // Pre-allocate
 
-        std::vector<Move> moves;
-        switch (piece.type) {
-        case PieceType::Pawn:
-            this->generatePawnMoves(sq, moves);
-            break;
-        case PieceType::Knight:
-            this->generateKnightMoves(sq, moves);
-            break;
-        case PieceType::Bishop:
-            this->generateBishopMoves(sq, moves);
-            break;
-        case PieceType::Rook:
-            this->generateRookMoves(sq, moves);
-            break;
-        case PieceType::Queen:
-            this->generateQueenMoves(sq, moves);
-            break;
-        case PieceType::King:
-            this->generateKingMoves(sq, moves);
-            break;
-        default:
-            break;
+    for (const auto& move : pseudoLegalMoves) {
+        if (isLegalMove(move)) {
+            _legalMoves.push_back(move);
         }
-        allMoves.insert(allMoves.end(), moves.begin(), moves.end());
-    };
+    }
 
-    // Use std::for_each to process all squares
-    std::for_each(indices.begin(), indices.end(), processSquare);
-
-    return allMoves;
+    return _legalMoves;
 }
 
 /**
@@ -67,31 +37,34 @@ const std::vector<Move> MoveGenerator::generatePseudoLegalMoves() {
     while (pieces) {
         Square from(pieces.popLSB());
         const auto piece = _board.getPieceAt(from);
-        std::vector<Move> pieceMoves;
+
+        _moveBuffer.clear();
+
         switch (piece.type) {
         case PieceType::Pawn:
-            generatePawnMoves(from, pieceMoves);
+            this->generatePawnMoves(from, _moveBuffer);
             break;
         case PieceType::King:
-            generateKingMoves(from, pieceMoves);
+            this->generateKingMoves(from, _moveBuffer);
             break;
         case PieceType::Queen:
-            generateQueenMoves(from, pieceMoves);
+            this->generateQueenMoves(from, _moveBuffer);
             break;
         case PieceType::Knight:
-            generateKnightMoves(from, pieceMoves);
+            this->generateKnightMoves(from, _moveBuffer);
             break;
         case PieceType::Bishop:
-            generateBishopMoves(from, pieceMoves);
+            this->generateBishopMoves(from, _moveBuffer);
             break;
         case PieceType::Rook:
-            generateRookMoves(from, pieceMoves);
+            this->generateRookMoves(from, _moveBuffer);
             break;
         default:
             break;
         }
 
-        moves.insert(moves.end(), pieceMoves.begin(), pieceMoves.end());
+        moves.insert(moves.end(), std::make_move_iterator(_moveBuffer.begin()),
+                     std::make_move_iterator(_moveBuffer.end()));
     }
 
     return moves;
@@ -104,19 +77,26 @@ const std::vector<Move> MoveGenerator::generatePseudoLegalMoves() {
  * @return true if not in check, false otherwise
  */
 bool MoveGenerator::isLegalMove(const Move move) const {
-    auto _tempBoard = _board;
-    _tempBoard.makeMove(Square(move.startSquareIndex()), Square(move.targetSquareIndex()));
-    return !_tempBoard.isInCheck();
+    // TODO: Deep copy??
+    const auto undoinfo =
+        _board.makeMove(Square(move.startSquareIndex()), Square(move.targetSquareIndex()));
+    const auto legal = !_board.isInCheck();
+    _board.unMakeMove(Square(move.startSquareIndex()), Square(move.targetSquareIndex()), undoinfo);
+    return legal;
 }
+
+// bool MoveGenerator::isLegalMove(const Move move) const {
+//     auto _tempBoard = _board;
+//     _tempBoard.makeMove(Square(move.startSquareIndex()), Square(move.targetSquareIndex()));
+//     return !_tempBoard.isInCheck();
+// }
 
 void MoveGenerator::generatePawnMoves(Square square, std::vector<Move>& moves) {
     auto piece = _board.getPieceAt(square);
 
-    // std::cout << piece.getPieceSymbol() << "=====+++++++++++++++++++" << piece.side << "\n";
     if (piece.type != PieceType::Pawn || piece.side != _board.side) {
         std::cerr << "Wrong Piece";
         return;
-        // return moves;
     }
 
     const auto direction = (_board.side == Side::White) ? 1 : -1;
@@ -178,8 +158,6 @@ void MoveGenerator::generatePawnMoves(Square square, std::vector<Move>& moves) {
                                MoveFlag::EnPassantCaptureFlag);
         }
     }
-
-    // return moves;
 }
 
 void MoveGenerator::generateKnightMoves(Square square, std::vector<Move>& moves) {
@@ -193,12 +171,11 @@ void MoveGenerator::generateKnightMoves(Square square, std::vector<Move>& moves)
         const auto targetSquare = validTargets.popLSB();
         moves.emplace_back(Move(square.getIndex(), targetSquare.getIndex()));
     }
-    // return moves;
 }
 
 void MoveGenerator::generateKingMoves(Square square, std::vector<Move>& moves) {
     const auto piece = _board.getPieceAt(square);
-    if (piece.type != PieceType::King || piece.side != _board.side) std::cerr << "Wrong Piece";
+    assert(piece.type == PieceType::King && piece.side == _board.side);
 
     // Normal moves
     const auto attacks = AttackTables::kingAttacks[square.getIndex()];
@@ -211,39 +188,44 @@ void MoveGenerator::generateKingMoves(Square square, std::vector<Move>& moves) {
     }
 
     // Castling
+    int rank = (_board.side == Side::White) ? 0 : 7;
     if (_board.side == Side::White) {
         if (_board.castlingRights & Board::whiteKingside) {
-            Square f1("F1"), g1("G1");
+            Square f1(5, rank), g1(6, rank);
             if (_board.getPieceAt(f1).type == PieceType::None &&
                 _board.getPieceAt(g1).type == PieceType::None &&
-                !isSquareAttacked(square, !_board.side) && !isSquareAttacked(f1, !_board.side)) {
+                !isSquareAttacked(square, !_board.side) && !isSquareAttacked(f1, !_board.side) &&
+                !isSquareAttacked(g1, !_board.side)) {
                 moves.emplace_back(square.getIndex(), g1.getIndex(), MoveFlag::CastleFlag);
             }
         }
         if (_board.castlingRights & Board::whiteQueenside) {
-            Square d1("D1"), c1("C1"), b1("B1");
+            Square d1(3, rank), c1(2, rank), b1(1, rank);
             if (_board.getPieceAt(d1).type == PieceType::None &&
                 _board.getPieceAt(c1).type == PieceType::None &&
                 _board.getPieceAt(b1).type == PieceType::None &&
-                !isSquareAttacked(square, !_board.side) && !isSquareAttacked(d1, !_board.side)) {
+                !isSquareAttacked(square, !_board.side) && !isSquareAttacked(d1, !_board.side) &&
+                !isSquareAttacked(c1, !_board.side)) {
                 moves.emplace_back(square.getIndex(), c1.getIndex(), MoveFlag::CastleFlag);
             }
         }
     } else {
         if (_board.castlingRights & Board::blackKingside) {
-            Square f8("F8"), g8("G8");
+            Square f8(5, rank), g8(6, rank);
             if (_board.getPieceAt(f8).type == PieceType::None &&
                 _board.getPieceAt(g8).type == PieceType::None &&
-                !isSquareAttacked(square, !_board.side) && !isSquareAttacked(f8, !_board.side)) {
+                !isSquareAttacked(square, !_board.side) && !isSquareAttacked(f8, !_board.side) &&
+                !isSquareAttacked(g8, !_board.side)) {
                 moves.emplace_back(square.getIndex(), g8.getIndex(), MoveFlag::CastleFlag);
             }
         }
         if (_board.castlingRights & Board::blackQueenside) {
-            Square d8("D8"), c8("C8"), b8("B8");
+            Square d8(3, rank), c8(2, rank), b8(1, rank);
             if (_board.getPieceAt(d8).type == PieceType::None &&
                 _board.getPieceAt(c8).type == PieceType::None &&
                 _board.getPieceAt(b8).type == PieceType::None &&
-                !isSquareAttacked(square, !_board.side) && !isSquareAttacked(d8, !_board.side)) {
+                !isSquareAttacked(square, !_board.side) && !isSquareAttacked(d8, !_board.side) &&
+                !isSquareAttacked(c8, !_board.side)) {
                 moves.emplace_back(square.getIndex(), c8.getIndex(), MoveFlag::CastleFlag);
             }
         }
@@ -268,6 +250,7 @@ void MoveGenerator::generateSlidingMoves(Square square, const Offset* directions
 
     const auto occupancy = _board.currentState.colorBitBoards[Side::White] |
                            _board.currentState.colorBitBoards[Side::Black];
+
     const auto ownPieces = _board.currentState.colorBitBoards[_board.side];
     BitBoard attacks;
 
@@ -289,8 +272,10 @@ void MoveGenerator::generateSlidingMoves(Square square, const Offset* directions
 }
 
 bool MoveGenerator::isSquareAttacked(Square square, Side attackerSide) const {
+    const auto attackerPieces = _board.currentState.colorBitBoards[attackerSide];
+    if (attackerPieces.isEmpty()) return false; // Quick exit if no attacker pieces
 
-    // Pawn attacks
+    // Check pawn attacks using precomputed tables
     const auto pawnAttacks = (attackerSide == Side::White)
                                  ? AttackTables::blackPawnAttacks[square.getIndex()]
                                  : AttackTables::whitePawnAttacks[square.getIndex()];
@@ -299,45 +284,75 @@ bool MoveGenerator::isSquareAttacked(Square square, Side attackerSide) const {
         return true;
     }
 
-    // Knight attacks
-    BitBoard knightAttacks = AttackTables::knightAttacks[square.getIndex()];
-    if (knightAttacks & _board.currentState.piecesBitBoards[attackerSide * 6 +
-                                                            static_cast<int>(PieceType::Knight)]) {
+    // Check knight attacks using precomputed tables
+    if (AttackTables::knightAttacks[square.getIndex()] &
+        _board.currentState
+            .piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Knight)]) {
         return true;
     }
 
-    // King attacks
-    BitBoard kingAttacks = AttackTables::kingAttacks[square.getIndex()];
-    if (kingAttacks &
+    // Check king attacks using precomputed tables
+    if (AttackTables::kingAttacks[square.getIndex()] &
         _board.currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::King)]) {
         return true;
     }
 
-    // Sliding attacks
-    BitBoard occupancy = _board.currentState.colorBitBoards[Side::White] |
-                         _board.currentState.colorBitBoards[Side::Black];
-    for (const auto& dir : AttackTables::bishopOffsets) {
-        auto current = square;
-        while (true) {
-            current = current.tryOffset(dir);
-            if (current == Square::None) break;
-            const auto piece = _board.getPieceAt(current);
-            if (piece.type != PieceType::None) {
-                if (piece.side == attackerSide && Piece::isDiagonalSlider(piece)) return true;
-                break;
+    // Get occupancy bitboard for blocking pieces
+    const BitBoard occupancy = _board.currentState.colorBitBoards[Side::White] |
+                               _board.currentState.colorBitBoards[Side::Black];
+
+    const int squareIdx = square.getIndex();
+
+    // Check diagonal attacks (bishops and queens)
+    const auto bishopQueens =
+        _board.currentState
+            .piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Bishop)] |
+        _board.currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Queen)];
+    if (!bishopQueens.isEmpty()) {
+        // Check each diagonal direction using precomputed ray masks
+        for (int dir = 0; dir < 4; ++dir) { // 0-3 are diagonal directions
+            BitBoard ray = AttackTables::rayMasks[squareIdx][dir];
+            BitBoard blockers = ray & occupancy;
+
+            if (!blockers.isEmpty()) {
+                // Find the closest blocker in this direction
+                Square blockerSq;
+                if (dir < 2) { // NW, NE directions
+                    blockerSq = Square(blockers.popLSB());
+                } else { // SW, SE directions
+                    blockerSq = Square(blockers.popMSB());
+                }
+                // Trim the ray at the first blocker
+                ray &= ~AttackTables::rayMasks[blockerSq.getIndex()][dir];
             }
+
+            if (ray & bishopQueens) return true;
         }
     }
-    for (const auto& dir : AttackTables::rookOffsets) {
-        auto current = square;
-        while (true) {
-            current = current.tryOffset(dir);
-            if (current == Square::None) break;
-            const auto piece = _board.getPieceAt(current);
-            if (piece.type != PieceType::None) {
-                if (piece.side == attackerSide && Piece::isOrthoSlider(piece)) return true;
-                break;
+
+    // Check orthogonal attacks (rooks and queens)
+    const auto rookQueens =
+        _board.currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Rook)] |
+        _board.currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Queen)];
+    if (!rookQueens.isEmpty()) {
+        // Check each orthogonal direction using precomputed ray masks
+        for (int dir = 4; dir < 8; ++dir) { // 4-7 are orthogonal directions
+            BitBoard ray = AttackTables::rayMasks[squareIdx][dir];
+            BitBoard blockers = ray & occupancy;
+
+            if (!blockers.isEmpty()) {
+                // Find the closest blocker in this direction
+                Square blockerSq;
+                if (dir == 4 || dir == 6) { // North, West directions
+                    blockerSq = Square(blockers.popLSB());
+                } else { // South, East directions
+                    blockerSq = Square(blockers.popMSB());
+                }
+                // Trim the ray at the first blocker
+                ray &= ~AttackTables::rayMasks[blockerSq.getIndex()][dir];
             }
+
+            if (ray & rookQueens) return true;
         }
     }
 

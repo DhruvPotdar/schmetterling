@@ -13,65 +13,79 @@ class BitBoard {
 
   public:
     // Default & explicit constructor
-    constexpr BitBoard(uint64_t bits = 0ULL) : _bits(bits) {}
+    inline constexpr BitBoard(uint64_t bits = 0ULL) : _bits(bits) {}
 
     // Conversion to raw bitboard
-    constexpr operator uint64_t() const { return _bits; }
-    constexpr operator std::string() const { return this->createDiagram(); }
+    inline constexpr operator uint64_t() const { return _bits; }
+    inline constexpr operator std::string() const { return this->createDiagram(); }
 
     // Bitwise operators
-    constexpr BitBoard operator&(BitBoard other) const { return BitBoard{_bits & other._bits}; }
-    constexpr BitBoard operator|(BitBoard other) const { return BitBoard{_bits | other._bits}; }
-    constexpr BitBoard operator^(BitBoard other) const { return BitBoard{_bits ^ other._bits}; }
-    constexpr BitBoard operator~() const { return BitBoard{~_bits}; }
+    inline constexpr BitBoard operator&(BitBoard other) const {
+        return BitBoard{_bits & other._bits};
+    }
+    inline constexpr BitBoard operator|(BitBoard other) const {
+        return BitBoard{_bits | other._bits};
+    }
+    inline constexpr BitBoard operator^(BitBoard other) const {
+        return BitBoard{_bits ^ other._bits};
+    }
+    inline constexpr BitBoard operator~() const { return BitBoard{~_bits}; }
 
-    constexpr BitBoard& operator&=(BitBoard other) {
+    inline constexpr BitBoard& operator&=(BitBoard other) {
         _bits &= other._bits;
         return *this;
     }
 
-    constexpr BitBoard& operator|=(BitBoard other) {
+    inline constexpr BitBoard& operator|=(BitBoard other) {
         _bits |= other._bits;
         return *this;
     }
 
-    constexpr BitBoard& operator^=(BitBoard other) {
+    inline constexpr BitBoard& operator^=(BitBoard other) {
         _bits ^= other._bits;
         return *this;
     }
 
-    constexpr int LSBIndex() const { return __builtin_ctzll(_bits); }
+    inline constexpr int LSBIndex() const { return __builtin_ctzll(_bits); }
 
-    constexpr Square popLSB() {
+    inline constexpr bool isEmpty() const { return _bits == 0; }
+
+    inline constexpr Square popMSB() {
+        if (_bits == 0) return Square::None; // No bits set
+        const auto index = 63 - __builtin_clzll(_bits);
+        _bits &= ~(1ULL << index); // Clear the MSB
+        return Square(index);
+    }
+    inline constexpr Square popLSB() {
         if (_bits == 0) return Square::None; // No bits set
         const auto index = __builtin_ctzll(_bits);
         _bits &= _bits - 1;
         return Square(index);
     }
-    constexpr int popCount() const { return __builtin_popcountll(_bits); }
+    inline constexpr int popCount() const { return __builtin_popcountll(_bits); }
 
     // Set, clear, toggle a single square (if valid)
-    constexpr void set(Square square) {
+    inline constexpr void set(Square square) {
         if (!square.isValid()) throw std::out_of_range("Cannot set BitBoard: invalid square");
         _bits |= (1ULL << square.getIndex());
     }
 
-    constexpr void clear(Square square) {
+    inline constexpr void clear(Square square) {
         if (!square.isValid()) throw std::out_of_range("Cannot clear BitBoard: invalid square");
         _bits &= ~(1ULL << square.getIndex());
     }
 
-    constexpr void toggle(Square square) {
+    inline constexpr void toggle(Square square) {
         if (!square.isValid()) throw std::out_of_range("Cannot toggle BitBoard: invalid square");
         _bits ^= (1ULL << square.getIndex());
     }
 
-    constexpr bool contains(Square square) const {
+    inline constexpr bool contains(Square square) const {
         return square.isValid() && ((_bits >> square.getIndex()) & 1ULL);
     }
 
     // Shift bitboard by raw offsets (positive = left shift; negative = right shift)
-    constexpr BitBoard shift(int offset) const {
+    inline constexpr BitBoard shift(int offset) const {
         if (offset > 0) {
             return BitBoard{_bits << offset};
         } else {
@@ -80,7 +94,7 @@ class BitBoard {
     }
 
     // Convenience: single-square bitboard
-    static constexpr BitBoard of(Square square) {
+    inline static constexpr BitBoard of(Square square) {
         return square.isValid() ? BitBoard{1ULL << square.getIndex()} : BitBoard{0ULL};
     }
 

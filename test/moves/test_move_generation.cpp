@@ -168,6 +168,9 @@ TEST_F(MoveGeneratorTest, GenerateMoves_InitialPosition) {
         Square to = move.to();
         Piece piece = board.getPieceAt(from);
 
+        EXPECT_NE(piece.type,
+                  PieceType::None); // or however you represent empty squares
+
         // All moves must be for White
         EXPECT_EQ(piece.side, Side::White);
 

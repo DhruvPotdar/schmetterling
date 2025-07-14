@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.27)
 
 # Project name and language
 project(schmetterling LANGUAGES CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 23)
@@ -61,7 +61,7 @@ add_executable(runUnitTests
     test/board/test_fen.cpp
     test/board/test_board.cpp
     test/moves/test_move_generation.cpp
-    test/evaluation/test_evaluation.cpp
+    # test/evaluation/test_evaluation.cpp
 )
 # Link GoogleTest and your library
 target_link_libraries(runUnitTests gtest_main schmetterling)

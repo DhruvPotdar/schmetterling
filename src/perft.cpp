@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Running perft test for FEN: " << fen << " at depth " << depth << "\n";
         std::cout << Board::createDiagram(board);
         board.perft(depth, true); // Run perft with verbose output
-        board.perftDivide(depth); // Run perftDivide
+        // board.perftDivide(depth); // Run perftDivide
     } catch (const std::exception& e) {
         std::cerr << "Error: Invalid FEN or board setup: " << e.what() << "\n";
         return 1;

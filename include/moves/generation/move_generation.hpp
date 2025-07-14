@@ -9,12 +9,17 @@
  * @class MoveGenerator
  * @brief Takes in the board and generates all possible legal and pseudo legal moves for all pieces
  * on the board
+ * TODO: Implement a per piece on board index/information about whether that piece is able to attack
+ * the king or not??
  */
 class MoveGenerator {
 
   public:
     MoveGenerator();
-    MoveGenerator(const Board& board) : _board(board) {};
+    MoveGenerator(Board& board) : _board(board) {
+        _moveBuffer.reserve(64);
+        _legalMoves.reserve(256);
+    };
 
     const std::vector<Move> generateMoves();
     bool isLegalMove(const Move move) const;
@@ -34,5 +39,7 @@ class MoveGenerator {
                               std::vector<Move>& moves) const;
 
   private:
-    const Board& _board;
+    Board& _board;
+    std::vector<Move> _moveBuffer;
+    std::vector<Move> _legalMoves;
 };

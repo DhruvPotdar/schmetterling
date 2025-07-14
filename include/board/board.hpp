@@ -35,6 +35,7 @@ struct BoardHistory {
     Move lastMove;
 };
 
+// TODO: Implement a tryMove function that does not affect global state ??????
 class Board {
   public:
     static const std::string startPositionFen;
@@ -95,7 +96,7 @@ class Board {
     Board(std::string fen) { FEN::parse(fen, *this); }
     std::string toFEN() const { return FEN::generate(*this); }
 
-    constexpr operator std::string() { return Board::createDiagram(*this); }
+    inline constexpr operator std::string() { return Board::createDiagram(*this); }
     Piece getPieceAt(const Square s) const;
     Piece getPieceAt(const std::string squareName) const;
 

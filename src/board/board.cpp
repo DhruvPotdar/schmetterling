@@ -1,4 +1,3 @@
-
 #include "board/board.hpp"
 #include "moves/generation/attack_squares.hpp"
 #include <chrono>
@@ -60,6 +59,7 @@ Piece Board::getPieceAt(const std::string squareName) const {
     return getPieceAt(s);
 }
 
+// TODO: Implement Pawn Promotion if not done yet
 Board::UndoInfo Board::makeMove(const Square from, const Square to) {
     UndoInfo undoInfo{from,           to,           getPieceAt(from),
                       std::nullopt,   std::nullopt, enPassantSquare,
@@ -110,7 +110,8 @@ Board::UndoInfo Board::makeMove(const Square from, const Square to) {
         const auto rankDiff = std::abs(to.getRankIndex() - from.getRankIndex());
         if (rankDiff == 2) {
             // Set en passant square
-            int epRank = (side == Side::White) ? from.getRankIndex() + 1 : from.getRankIndex() - 1;
+            const auto epRank =
+                (side == Side::White) ? from.getRankIndex() + 1 : from.getRankIndex() - 1;
             enPassantSquare = Square(from.getFile(), epRank);
         } else {
             // Clear en passant square if not a double pawn move
@@ -521,62 +522,62 @@ Square Board::findKingSquare(Side side) const {
     return Square::None;
 }
 
+// Redundant with moveGen IsSquareAttacked??
 bool Board::isSquareAttacked(Square square, Side attackerSide) const {
-    int sq = square.getIndex();
+    const int sq = square.getIndex();
+    const BitBoard squareBB(1ULL << sq);
 
-    // Get all occupancy
-    BitBoard occupancy =
-        currentState.colorBitBoards[Side::White] | currentState.colorBitBoards[Side::Black];
-
-    // Pawn attacks (note: from attacker's point of view)
+    // Check pawn attacks using pre-computed tables
+    const auto pawnBB =
+        currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Pawn)];
     const auto& pawnAttacks = (attackerSide == Side::White) ? AttackTables::whitePawnAttacks[sq]
                                                             : AttackTables::blackPawnAttacks[sq];
-    if (pawnAttacks &
-        currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Pawn)])
-        return true;
+    if (pawnAttacks & pawnBB) return true;
 
-    // Knight attacks
-    if (AttackTables::knightAttacks[sq] &
-        currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Knight)])
-        return true;
+    // Check knight attacks using pre-computed tables
+    const auto knightBB =
+        currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Knight)];
+    if (AttackTables::knightAttacks[sq] & knightBB) return true;
 
-    // King attacks
-    if (AttackTables::kingAttacks[sq] &
-        currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::King)])
-        return true;
+    // Check king attacks using pre-computed tables
+    const auto kingBB =
+        currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::King)];
+    if (AttackTables::kingAttacks[sq] & kingBB) return true;
 
-    // Sliding piece attacks (brute force until you implement sliding attack tables)
-    for (const auto& dir : AttackTables::bishopOffsets) {
-        auto current = square;
-        while (true) {
-            current = current.tryOffset(dir);
-            if (current == Square::None) break;
+    // Get all occupancy for sliding piece attacks
+    const BitBoard occupancy =
+        currentState.colorBitBoards[Side::White] | currentState.colorBitBoards[Side::Black];
 
-            const auto piece = getPieceAt(current);
-            if (piece.type != PieceType::None) {
-                if (piece.side == attackerSide &&
-                    (piece.type == PieceType::Bishop || piece.type == PieceType::Queen))
-                    return true;
-                break;
+    // Check diagonal sliders (bishops and queens)
+    const BitBoard diagonalSliders = currentState.diagonalSliders[attackerSide];
+    if (diagonalSliders) {
+        BitBoard bishopAttacks;
+        for (const auto& dir : AttackTables::bishopOffsets) {
+            auto current = square;
+            while (true) {
+                current = current.tryOffset(dir);
+                if (current == Square::None) break;
+                bishopAttacks.set(current);
+                if (occupancy.contains(current)) break;
             }
         }
+        if (bishopAttacks & diagonalSliders) return true;
     }
 
-    for (const auto& dir : AttackTables::rookOffsets) {
-        auto current = square;
-        while (true) {
-            current = current.tryOffset(dir);
-            if (current == Square::None) break;
-
-            const auto piece = getPieceAt(current);
-            if (piece.type != PieceType::None) {
-                if (piece.side == attackerSide &&
-                    (piece.type == PieceType::Rook || piece.type == PieceType::Queen))
-                    return true;
-
-                break;
+    // Check orthogonal sliders (rooks and queens)
+    const BitBoard orthoSliders = currentState.orthoSliders[attackerSide];
+    if (orthoSliders) {
+        BitBoard rookAttacks;
+        for (const auto& dir : AttackTables::rookOffsets) {
+            auto current = square;
+            while (true) {
+                current = current.tryOffset(dir);
+                if (current == Square::None) break;
+                rookAttacks.set(current);
+                if (occupancy.contains(current)) break;
             }
         }
+        if (rookAttacks & orthoSliders) return true;
     }
 
     return false;
@@ -613,8 +614,8 @@ uint64_t Board::perft(int depth, bool verbose) {
 
         std::cout << "\n=== Perft Results for Depth " << depth << " ===\n";
         std::cout << "Total Nodes: " << nodes << "\n";
-        std::cout << "Time Taken: " << std::fixed << std::setprecision(3) << seconds
-                  << " seconds\n";
+        std::cout << "Time Taken: " << std::fixed << std::setprecision(6) << seconds * 1000
+                  << " ms\n";
         std::cout << "Nodes per Second: " << std::fixed << std::setprecision(0) << nodesPerSecond
                   << " nps"
                   << "\n";
