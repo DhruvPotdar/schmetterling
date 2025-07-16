@@ -4,7 +4,6 @@
 #include <cassert>
 #include <cctype>
 #include <cstdint>
-#include <iostream>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -73,24 +72,24 @@ class Square {
     }
 
     // Index getter
-    constexpr int getIndex() const { return index_; }
+    inline constexpr int getIndex() const { return index_; }
 
     // File/rank getters
-    constexpr uint8_t getFile() const {
+    inline constexpr uint8_t getFile() const {
         assert(*this != Square::None && "Cannot get file of None");
         return index_ % 8;
     }
 
-    constexpr int getRankIndex() const {
+    inline constexpr int getRankIndex() const {
         assert(*this != Square::None && "Cannot get rank of None");
         return index_ / 8;
     }
 
-    constexpr char getFileChar() const { return 'A' + getFile(); }
-    constexpr int getRank() const { return getRankIndex() + 1; }
+    inline constexpr char getFileChar() const { return 'A' + getFile(); }
+    inline constexpr int getRank() const { return getRankIndex() + 1; }
 
     // Algebraic
-    constexpr std::string getAlgebraic() const {
+    std::string getAlgebraic() const {
         static const std::array<std::string, 64> cache = []() {
             std::array<std::string, 64> tmp;
             for (int i = 0; i < 64; ++i) {
@@ -105,41 +104,43 @@ class Square {
     }
 
     // Color check
-    constexpr bool isLightSquare() const {
+    inline constexpr bool isLightSquare() const {
         assert(*this != Square::None && "Cannot check color of None");
         return ((getFile() + getRankIndex()) % 2) != 0;
     }
 
-    constexpr bool isValid() const { return index_ >= 0 && index_ < 64; }
+    inline constexpr bool isValid() const { return index_ >= 0 && index_ < 64; }
 
     // Offset operations
-    constexpr Square offset(const Offset& d) const {
+    inline constexpr Square offset(const Offset& d) const {
         assert(*this != Square::None && "Cannot offset from None");
         const auto fx = getFile() + d.file;
         const auto ry = getRankIndex() + d.rank;
         if (fx < 0 || fx > 7 || ry < 0 || ry > 7) {
             throw std::out_of_range("Offset leads outside the board");
         }
-        return Square(fx, ry);
+        return Square{fx, ry};
     }
 
-    constexpr Square tryOffset(const Offset& d) const {
+    inline constexpr Square tryOffset(const Offset& d) const {
         if (*this == Square::None) return Square::None;
         const auto fx = getFile() + d.file;
         const auto ry = getRankIndex() + d.rank;
         if (fx < 0 || fx > 7 || ry < 0 || ry > 7) return Square::None;
-        return Square(fx, ry);
+        return Square{fx, ry};
     }
 
     // Arithmetic with Offset
-    constexpr Square operator+(const Offset& d) const { return offset(d); }
-    constexpr Square operator-(const Offset& d) const { return offset(Offset{-d.file, -d.rank}); }
-    constexpr Square operator*(int m) const {
+    inline constexpr Square operator+(const Offset& d) const { return offset(d); }
+    inline constexpr Square operator-(const Offset& d) const {
+        return offset(Offset{-d.file, -d.rank});
+    }
+    inline constexpr Square operator*(int m) const {
         return offset(Offset{getFile() * (m - 1), getRankIndex() * (m - 1)});
     }
 
     // Distance (Manhattan)
-    constexpr uint8_t distanceTo(const Square& o) const {
+    inline constexpr uint8_t distanceTo(const Square& o) const {
         if (*this == Square::None || o == Square::None) {
             return std::numeric_limits<uint8_t>::max();
         }
@@ -149,40 +150,40 @@ class Square {
     }
 
     // Chess relations
-    constexpr bool sameFile(const Square& o) const {
+    inline constexpr bool sameFile(const Square& o) const {
         return isValid() && o.isValid() && getFile() == o.getFile();
     }
-    constexpr bool sameRank(const Square& o) const {
+    inline constexpr bool sameRank(const Square& o) const {
         return isValid() && o.isValid() && getRank() == o.getRank();
     }
-    constexpr bool sameDiagonal(const Square& o) const {
+    inline constexpr bool sameDiagonal(const Square& o) const {
         return isValid() && o.isValid() &&
                std::abs(getFile() - o.getFile()) == std::abs(getRankIndex() - o.getRankIndex());
     }
 
     // Conversion and comparison
-    constexpr explicit operator int() const { return index_; }
-    constexpr bool operator==(const Square& o) const { return index_ == o.index_; }
-    constexpr bool operator!=(const Square& o) const { return !(*this == o); }
+    inline constexpr explicit operator int() const { return index_; }
+    inline constexpr bool operator==(const Square& o) const { return index_ == o.index_; }
+    inline constexpr bool operator!=(const Square& o) const { return !(*this == o); }
 
     // Increment/decrement (index-based)
-    constexpr Square& operator++() {
+    inline constexpr Square& operator++() {
         if (index_ < 63) ++index_;
         return *this;
     }
 
-    constexpr Square operator++(int) {
+    inline constexpr Square operator++(int) {
         Square tmp = *this;
         ++(*this);
         return tmp;
     }
 
-    constexpr Square& operator--() {
+    inline constexpr Square& operator--() {
         if (index_ > -1) --index_;
         return *this;
     }
 
-    constexpr Square operator--(int) {
+    inline constexpr Square operator--(int) {
         Square tmp = *this;
         --(*this);
         return tmp;

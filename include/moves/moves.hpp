@@ -3,7 +3,7 @@
 #include "board/types.hpp"
 #include <cstdint>
 
-enum class MoveFlag {
+enum class MoveFlag : std::uint8_t {
     NoFlag = 0b0000,
     EnPassantCaptureFlag = 0b0001,
     CastleFlag = 0b0010,
@@ -31,6 +31,13 @@ enum class MoveFlag {
  *
  */
 class Move {
+  private:
+    int moveValue = 0;
+
+    static constexpr uint16_t startSquareMask = 0x3F;   // 0000000000111111
+    static constexpr uint16_t targetSquareMask = 0xFC0; // 0000011111100000
+    static constexpr uint16_t flagMask = 0xF000;        // 1111000000000000
+
   public:
     Move(uint16_t moveVal) { moveValue = moveVal; }
 
@@ -102,11 +109,4 @@ class Move {
             return PieceType::None;
         }
     }
-
-  private:
-    int moveValue = 0;
-
-    static constexpr uint16_t startSquareMask = 0x3F;   // 0000000000111111
-    static constexpr uint16_t targetSquareMask = 0xFC0; // 0000011111100000
-    static constexpr uint16_t flagMask = 0xF000;        // 1111000000000000
 };

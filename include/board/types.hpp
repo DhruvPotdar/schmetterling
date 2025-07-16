@@ -4,20 +4,20 @@
 
 class Side {
   private:
-    bool side;
+    int side;
 
   public:
     constexpr static bool White = 0;
     constexpr static bool Black = 1;
     Side() : side(White) {};
 
-    Side(bool _side) : side(_side) {
+    Side(int _side) : side(_side) {
         if (_side != White && _side != Black) {
             throw std::invalid_argument("Invalid side value");
         }
     };
 
-    operator bool() const { return side; }
+    operator int() const { return side; }
 
     Side operator!() const {
         if (side == White) return Black;

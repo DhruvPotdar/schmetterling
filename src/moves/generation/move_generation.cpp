@@ -71,25 +71,24 @@ const std::vector<Move> MoveGenerator::generatePseudoLegalMoves() {
 }
 
 /**
- * @brief Makes a move on a tempBoard and checks if the board is in check
+ * @brief Makes a move on the board ,checks if the board is in check and undos
  *
  * @param move
  * @return true if not in check, false otherwise
  */
-bool MoveGenerator::isLegalMove(const Move move) const {
-    // TODO: Deep copy??
-    const auto undoinfo =
-        _board.makeMove(Square(move.startSquareIndex()), Square(move.targetSquareIndex()));
-    const auto legal = !_board.isInCheck();
-    _board.unMakeMove(Square(move.startSquareIndex()), Square(move.targetSquareIndex()), undoinfo);
-    return legal;
-}
-
 // bool MoveGenerator::isLegalMove(const Move move) const {
-//     auto _tempBoard = _board;
-//     _tempBoard.makeMove(Square(move.startSquareIndex()), Square(move.targetSquareIndex()));
-//     return !_tempBoard.isInCheck();
+//     const auto undoinfo =
+//         _board.makeMove(Square(move.startSquareIndex()), Square(move.targetSquareIndex()));
+//     const auto legal = !_board.isInCheck();
+//     _board.unMakeMove(Square(move.startSquareIndex()), Square(move.targetSquareIndex()),
+//     undoinfo); return legal;
 // }
+
+bool MoveGenerator::isLegalMove(const Move move) const {
+    auto _tempBoard = _board;
+    _tempBoard.makeMove(Square(move.startSquareIndex()), Square(move.targetSquareIndex()));
+    return !_tempBoard.isInCheck();
+}
 
 void MoveGenerator::generatePawnMoves(Square square, std::vector<Move>& moves) {
     auto piece = _board.getPieceAt(square);
