@@ -48,20 +48,27 @@ class BitBoard {
 
     inline constexpr int LSBIndex() const { return __builtin_ctzll(_bits); }
 
+    inline constexpr int peekLSB() {
+        if (_bits == 0) return 0; // No set bits
+        return _bits & (-_bits);  // Isolates rightmost 1-bit
+    }
+
     inline constexpr bool isEmpty() const { return _bits == 0; }
 
     inline constexpr Square popMSB() {
         if (_bits == 0) return Square::None; // No bits set
         const auto index = 63 - __builtin_clzll(_bits);
         _bits &= ~(1ULL << index); // Clear the MSB
-        return Square(index);
+        return Square{index};
     }
+
     inline constexpr Square popLSB() {
         if (_bits == 0) return Square::None; // No bits set
         const auto index = __builtin_ctzll(_bits);
         _bits &= _bits - 1;
-        return Square(index);
+        return Square{index};
     }
+
     inline constexpr int popCount() const { return __builtin_popcountll(_bits); }
 
     // Set, clear, toggle a single square (if valid)
