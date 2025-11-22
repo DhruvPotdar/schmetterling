@@ -4,8 +4,8 @@
 #include "moves/moves.hpp"
 #include <vector>
 
-#include <algorithm> // for std::for_each
-#include <numeric>   // for std::iota
+#include <algorithm>
+#include <numeric>
 #include <vector>
 
 const std::vector<Move> MoveGenerator::generateMoves() {
@@ -216,7 +216,8 @@ void MoveGenerator::generateKingMoves(Square square, std::vector<Move>& moves) {
             Square f1("F1"), g1("G1");
             if (_board.getPieceAt(f1).type == PieceType::None &&
                 _board.getPieceAt(g1).type == PieceType::None &&
-                !isSquareAttacked(square, !_board.side) && !isSquareAttacked(f1, !_board.side)) {
+                !_board.isSquareAttacked(square, !_board.side) &&
+                !_board.isSquareAttacked(f1, !_board.side)) {
                 moves.emplace_back(square.getIndex(), g1.getIndex(), MoveFlag::CastleFlag);
             }
         }
@@ -225,7 +226,8 @@ void MoveGenerator::generateKingMoves(Square square, std::vector<Move>& moves) {
             if (_board.getPieceAt(d1).type == PieceType::None &&
                 _board.getPieceAt(c1).type == PieceType::None &&
                 _board.getPieceAt(b1).type == PieceType::None &&
-                !isSquareAttacked(square, !_board.side) && !isSquareAttacked(d1, !_board.side)) {
+                !_board.isSquareAttacked(square, !_board.side) &&
+                !_board.isSquareAttacked(d1, !_board.side)) {
                 moves.emplace_back(square.getIndex(), c1.getIndex(), MoveFlag::CastleFlag);
             }
         }
@@ -234,7 +236,8 @@ void MoveGenerator::generateKingMoves(Square square, std::vector<Move>& moves) {
             Square f8("F8"), g8("G8");
             if (_board.getPieceAt(f8).type == PieceType::None &&
                 _board.getPieceAt(g8).type == PieceType::None &&
-                !isSquareAttacked(square, !_board.side) && !isSquareAttacked(f8, !_board.side)) {
+                !_board.isSquareAttacked(square, !_board.side) &&
+                !_board.isSquareAttacked(f8, !_board.side)) {
                 moves.emplace_back(square.getIndex(), g8.getIndex(), MoveFlag::CastleFlag);
             }
         }
@@ -243,7 +246,8 @@ void MoveGenerator::generateKingMoves(Square square, std::vector<Move>& moves) {
             if (_board.getPieceAt(d8).type == PieceType::None &&
                 _board.getPieceAt(c8).type == PieceType::None &&
                 _board.getPieceAt(b8).type == PieceType::None &&
-                !isSquareAttacked(square, !_board.side) && !isSquareAttacked(d8, !_board.side)) {
+                !_board.isSquareAttacked(square, !_board.side) &&
+                !_board.isSquareAttacked(d8, !_board.side)) {
                 moves.emplace_back(square.getIndex(), c8.getIndex(), MoveFlag::CastleFlag);
             }
         }
@@ -286,62 +290,6 @@ void MoveGenerator::generateSlidingMoves(Square square, const Offset* directions
         const auto targetSquare = validTargets.popLSB();
         moves.emplace_back(square.getIndex(), targetSquare.getIndex());
     }
-}
-
-bool MoveGenerator::isSquareAttacked(Square square, Side attackerSide) const {
-
-    // Pawn attacks
-    const auto pawnAttacks = (attackerSide == Side::White)
-                                 ? AttackTables::blackPawnAttacks[square.getIndex()]
-                                 : AttackTables::whitePawnAttacks[square.getIndex()];
-    if (pawnAttacks &
-        _board.currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Pawn)]) {
-        return true;
-    }
-
-    // Knight attacks
-    BitBoard knightAttacks = AttackTables::knightAttacks[square.getIndex()];
-    if (knightAttacks & _board.currentState.piecesBitBoards[attackerSide * 6 +
-                                                            static_cast<int>(PieceType::Knight)]) {
-        return true;
-    }
-
-    // King attacks
-    BitBoard kingAttacks = AttackTables::kingAttacks[square.getIndex()];
-    if (kingAttacks &
-        _board.currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::King)]) {
-        return true;
-    }
-
-    // Sliding attacks
-    BitBoard occupancy = _board.currentState.colorBitBoards[Side::White] |
-                         _board.currentState.colorBitBoards[Side::Black];
-    for (const auto& dir : AttackTables::bishopOffsets) {
-        auto current = square;
-        while (true) {
-            current = current.tryOffset(dir);
-            if (current == Square::None) break;
-            const auto piece = _board.getPieceAt(current);
-            if (piece.type != PieceType::None) {
-                if (piece.side == attackerSide && Piece::isDiagonalSlider(piece)) return true;
-                break;
-            }
-        }
-    }
-    for (const auto& dir : AttackTables::rookOffsets) {
-        auto current = square;
-        while (true) {
-            current = current.tryOffset(dir);
-            if (current == Square::None) break;
-            const auto piece = _board.getPieceAt(current);
-            if (piece.type != PieceType::None) {
-                if (piece.side == attackerSide && Piece::isOrthoSlider(piece)) return true;
-                break;
-            }
-        }
-    }
-
-    return false;
 }
 
 BitBoard MoveGenerator::getAttacksForPiece(Piece piece) const {

@@ -42,6 +42,25 @@ class BitBoard {
 
     constexpr int LSBIndex() const { return __builtin_ctzll(_bits); }
 
+    constexpr Square popMSB() {
+        if (_bits == 0) return Square::None; // No bits set
+        const auto index = 63 - __builtin_clzll(_bits);
+        _bits &= ~(1ULL << index);
+        return Square(index);
+    }
+
+    constexpr Square peekLSB() const {
+        if (_bits == 0) return Square::None; // No bits set
+        const auto index = __builtin_ctzll(_bits);
+        return Square(index);
+    }
+
+    constexpr Square peekMSB() const {
+        if (_bits == 0) return Square::None; // No bits set
+        const auto index = 63 - __builtin_clzll(_bits);
+        return Square(index);
+    }
+
     constexpr Square popLSB() {
         if (_bits == 0) return Square::None; // No bits set
         const auto index = __builtin_ctzll(_bits);

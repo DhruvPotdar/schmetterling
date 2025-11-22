@@ -76,7 +76,7 @@ class Square {
     constexpr int getIndex() const { return index_; }
 
     // File/rank getters
-    constexpr uint8_t getFile() const {
+    constexpr int getFile() const {
         assert(*this != Square::None && "Cannot get file of None");
         return index_ % 8;
     }

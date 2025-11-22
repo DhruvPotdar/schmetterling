@@ -27,7 +27,7 @@ class MoveGenerator {
     void generateQueenMoves(Square square, std::vector<Move>& moves);
     void generateKingMoves(Square square, std::vector<Move>& moves);
 
-    bool isSquareAttacked(Square square, Side attackerSide) const;
+    // bool isSquareAttacked(Square square, Side attackerSide) const;
     BitBoard getAttacksForPiece(Piece piece) const;
 
     void generateSlidingMoves(Square square, const Offset* directions, int numDirections,

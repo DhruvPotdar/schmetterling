@@ -1,4 +1,3 @@
-
 #include "board/board.hpp"
 #include "moves/generation/attack_squares.hpp"
 #include <chrono>
@@ -523,49 +522,41 @@ Square Board::findKingSquare(Side side) const {
 }
 
 bool Board::isSquareAttacked(Square square, Side attackerSide) const {
+    // Check pawn attacks
     auto pawnAttacks = (attackerSide == Side::White)
-                           ? AttackTables::blackPawnAttacks[square.getIndex()]
-                           : AttackTables::whitePawnAttacks[square.getIndex()];
-    if (pawnAttacks &
-        currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Pawn)]) {
+        ? AttackTables::blackPawnAttacks[square.getIndex()]
+        : AttackTables::whitePawnAttacks[square.getIndex()];
+    if (pawnAttacks & currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Pawn)]) {
         return true;
     }
-    BitBoard knightAttacks = AttackTables::knightAttacks[square.getIndex()];
-    if (knightAttacks &
+
+    // Check knight attacks
+    if (AttackTables::knightAttacks[square.getIndex()] & 
         currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::Knight)]) {
         return true;
     }
-    BitBoard kingAttacks = AttackTables::kingAttacks[square.getIndex()];
-    if (kingAttacks &
+
+    // Check king attacks
+    if (AttackTables::kingAttacks[square.getIndex()] & 
         currentState.piecesBitBoards[attackerSide * 6 + static_cast<int>(PieceType::King)]) {
         return true;
     }
-    BitBoard occupancy =
-        currentState.colorBitBoards[Side::White] | currentState.colorBitBoards[Side::Black];
-    for (const auto& dir : AttackTables::bishopOffsets) {
-        auto current = square;
-        while (true) {
-            current = current.tryOffset(dir);
-            if (current == Square::None) break;
-            const auto piece = getPieceAt(current);
-            if (piece.type != PieceType::None) {
-                if (piece.side == attackerSide && Piece::isDiagonalSlider(piece)) return true;
-                break;
-            }
-        }
+
+    // Get board occupancy
+    BitBoard occupancy = currentState.colorBitBoards[Side::White] | currentState.colorBitBoards[Side::Black];
+
+    // Check bishop/queen attacks
+    BitBoard bishopAttacks = AttackTables::getBishopAttacks(square.getIndex(), occupancy);
+    if (bishopAttacks & currentState.diagonalSliders[attackerSide]) {
+        return true;
     }
-    for (const auto& dir : AttackTables::rookOffsets) {
-        auto current = square;
-        while (true) {
-            current = current.tryOffset(dir);
-            if (current == Square::None) break;
-            const auto piece = getPieceAt(current);
-            if (piece.type != PieceType::None) {
-                if (piece.side == attackerSide && Piece::isOrthoSlider(piece)) return true;
-                break;
-            }
-        }
+
+    // Check rook/queen attacks
+    BitBoard rookAttacks = AttackTables::getRookAttacks(square.getIndex(), occupancy);
+    if (rookAttacks & currentState.orthoSliders[attackerSide]) {
+        return true;
     }
+
     return false;
 }
 
